@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>About — White Label Resell</title>
+<meta name="description" content="White Label Resell is the production bench behind agencies. Learn who we are, why the model exists, and how we operate." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:clip}
+html,body{background:#000;color:#FFF}
+body{font-family:'Geist',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip}
+body::-webkit-scrollbar{width:0}
+::selection{background:#FFF;color:#000}
+a{color:inherit;text-decoration:none}
+a:focus-visible{outline:2px solid #FFF;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="lib/react.production.min.js"></script>
+<script src="lib/react-dom.production.min.js"></script>
+<script src="lib/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback}=React;
+
+/* ═══ HELPERS ═══ */
+const clamp01=v=>Math.max(0,Math.min(1,v));
+const range=(p,start,end)=>clamp01((p-start)/(end-start));
+const lerp=(a,b,t)=>a+(b-a)*t;
+
+/* ═══ SCROLL PROGRESS ═══ */
+const stickyProgress=(rect,vh)=>{
+  const sp=rect.height-vh;
+  return sp>0?clamp01(-rect.top/sp):0;
+};
+const viewportProgress=(rect,vh)=>{
+  const y=rect.top;
+  const trigger=vh*.85;
+  const end=vh*.15;
+  return clamp01((trigger-y)/(trigger-end));
+};
+
+/* ═══ HOOKS ═══ */
+const useReducedMotion=()=>{
+  const[r,setR]=useState(()=>window.matchMedia('(prefers-reduced-motion:reduce)').matches);
+  useEffect(()=>{
+    const mq=window.matchMedia('(prefers-reduced-motion:reduce)');
+    setR(mq.matches);
+    const h=e=>setR(e.matches);
+    mq.addEventListener('change',h);
+    return()=>mq.removeEventListener('change',h);
+  },[]);
+  return r;
+};
+
+/* ═══ SHARED ═══ */
+const TB=({size=16,color='currentColor',gap=2})=>(
+  <span style={{display:'inline-flex',alignItems:'flex-end',gap,height:size}}>
+    {[.66,1,.82].map((h,i)=><span key={i} style={{width:size*.22,height:`${h*100}%`,background:color}}/>)}
+  </span>
+);
+const K=({children,s={}})=>(
+  <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginBottom:16,...s}}>{children}</div>
+);
+const EASE='cubic-bezier(.16,1,.3,1)';
+
+/* ═══ NAV ═══ */
+const NL=({label,href,active,mobile})=>{
+  const[h,setH]=useState(false);
+  return(
+    <a href={href} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
+      style={{color:'#FFF',position:'relative',paddingBottom:mobile?0:2,display:'block',padding:mobile?'16px 0':'0 0 2px 0'}}>
+      <span style={{position:'relative',zIndex:1,fontSize:mobile?28:11,letterSpacing:mobile?'.08em':'.22em'}}>{label}</span>
+      {!mobile&&<span style={{position:'absolute',bottom:0,left:0,width:'100%',height:1,background:'#FFF',transformOrigin:'left',transform:(h||active)?'scaleX(1)':'scaleX(0)',transition:'transform .3s cubic-bezier(.2,.8,.2,1)'}}/>}
+    </a>
+  );
+};
+const HUD=()=>{
+  const red=useReducedMotion();
+  const[mobOpen,setMobOpen]=useState(false);
+
+  useEffect(()=>{
+    if(mobOpen)document.body.style.overflow='hidden';
+    else document.body.style.overflow='';
+    return()=>{document.body.style.overflow=''};
+  },[mobOpen]);
+
+  return(
+    <React.Fragment>
+      <nav style={{position:'fixed',top:0,left:0,right:0,zIndex:100,mixBlendMode:'difference',pointerEvents:'none',padding:'20px 32px',display:'flex',justifyContent:'space-between',alignItems:'center',color:'#FFF',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase'}}>
+        <a href="index.html" style={{pointerEvents:'auto',display:'inline-flex',alignItems:'center',gap:12,color:'#FFF'}}>
+          <TB size={14} color="#FFF" gap={3}/><span className="hide-mobile">White Label Resell</span>
+        </a>
+        <span className="nav-desktop" style={{pointerEvents:'auto',display:'flex',gap:28}}>
+          <NL label="Home" href="index.html"/>
+          <NL label="Work" href="case-studies.html"/>
+          <NL label="About" href="about.html" active/>
+          <NL label="Team" href="team.html"/>
+          <NL label="Get a Quote" href="contact.html"/>
+        </span>
+        <button className="nav-mob-toggle" onClick={()=>setMobOpen(o=>!o)} style={{pointerEvents:'auto',background:'none',border:'none',color:'#FFF',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',cursor:'pointer',display:'none',padding:0}}>
+          {mobOpen?'CLOSE':'MENU'}
+        </button>
+      </nav>
+      {mobOpen&&<div className="nav-mob-overlay" style={{position:'fixed',inset:0,zIndex:99,background:'#000',display:'flex',flexDirection:'column',justifyContent:'center',padding:'80px 48px'}}>
+        <NL label="Home" href="index.html" mobile/>
+        <NL label="Work" href="case-studies.html" mobile/>
+        <NL label="About" href="about.html" mobile active/>
+        <NL label="Team" href="team.html" mobile/>
+        <NL label="Get a Quote" href="contact.html" mobile/>
+      </div>}
+      <style>{`
+        .hide-mobile{display:inline}
+        .nav-mob-toggle{display:none!important}
+        .nav-desktop{display:flex!important}
+        @media(max-width:768px){
+          .hide-mobile{display:none}
+          .nav-mob-toggle{display:block!important}
+          .nav-desktop{display:none!important}
+        }
+      `}</style>
+    </React.Fragment>
+  );
+};
+
+/* ═══ 01 HERO ═══ */
+const Hero=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[phase,setPhase]=useState(red?5:0);
+
+  useEffect(()=>{
+    if(red){setPhase(5);return}
+    const timers=[
+      setTimeout(()=>setPhase(1),0),
+      setTimeout(()=>setPhase(2),120),
+      setTimeout(()=>setPhase(3),280),
+      setTimeout(()=>setPhase(4),480),
+      setTimeout(()=>setPhase(5),750),
+    ];
+    return()=>timers.forEach(clearTimeout);
+  },[red]);
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=stickyProgress(rc,vh);
+      const e=el.current;
+      if(e.hl)e.hl.style.transform=`translateY(${p*-50}px)`;
+      if(e.cp){
+        e.cp.style.transform=`translateY(${p*20}px)`;
+        e.cp.style.opacity=Math.max(0,1-p*3);
+      }
+      if(e.bg)e.bg.style.transform=`translateY(calc(-50% + ${p*40}px))`;
+      if(e.rule){
+        const ex=1+p*.15;
+        e.rule.style.transform=`scaleX(${ex})`;
+      }
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();
+    window.addEventListener('scroll',on,{passive:true});
+    window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{height:'180vh',position:'relative',background:'#000',color:'#FFF'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',justifyContent:'center',padding:'clamp(100px,14vh,160px) 6vw clamp(60px,8vh,100px)'}}>
+
+        {/* structural rule */}
+        <div style={{position:'absolute',top:0,left:0,right:0,height:1,background:'rgba(255,255,255,.08)',zIndex:1}}>
+          <div ref={n=>{if(n)el.current.rule=n}} style={{height:'100%',background:'rgba(255,255,255,.25)',transformOrigin:'left',transform:phase>=1?'scaleX(1)':'scaleX(0)',transition:red?'none':`transform .8s ${EASE}`}}/>
+        </div>
+
+        {/* large background type */}
+        <div ref={n=>{if(n)el.current.bg=n}} style={{position:'absolute',top:'50%',left:'6vw',fontFamily:'Geist',fontSize:'clamp(120px,18vw,280px)',fontWeight:700,letterSpacing:'-.06em',lineHeight:.82,opacity:.04,whiteSpace:'nowrap',pointerEvents:'none',zIndex:0,willChange:'transform'}}>
+          ABOUT
+        </div>
+
+        {/* ThreeBar — outer handles parallax, inner preserves proportions */}
+        <div style={{position:'absolute',top:'50%',right:'12vw',transform:'translateY(-50%)',zIndex:3}}>
+          <div style={{display:'flex',gap:8,alignItems:'flex-end',height:64}}>
+            {[0,1,2].map(i=>{
+              const ratios=[.66,1,.82];
+              const enters=['100%','-100%','100%'];
+              return(
+                <div key={i} ref={n=>{if(n)el.current[`bwrap${i}`]=n}} style={{
+                  width:10,transformOrigin:'bottom',willChange:'transform',
+                  transform:phase>=2?'translateY(0)':'translateY('+enters[i]+')',
+                  transition:red?'none':`transform .7s ${EASE} ${i*80+120}ms`,
+                }}>
+                  <div style={{
+                    width:10,
+                    height:64,
+                    background:'#FFF',
+                    transformOrigin:'bottom',
+                    transform:`scaleY(${ratios[i]})`,
+                  }}/>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* headline — mask reveal per line */}
+        <div ref={n=>{if(n)el.current.hl=n}} style={{position:'relative',zIndex:2,willChange:'transform'}}>
+          {['THE TEAM','BEHIND','THE TEAM.'].map((txt,i)=>(
+            <div key={i} style={{overflow:'hidden'}}>
+              <h1 style={{
+                margin:0,fontFamily:'Geist',fontSize:'clamp(70px,12vw,190px)',fontWeight:500,
+                letterSpacing:'-.05em',lineHeight:.88,
+                transform:phase>=3?'translateY(0)':'translateY(100%)',
+                transition:red?'none':`transform .6s ${EASE} ${i*100}ms`,
+              }}>{txt}</h1>
+            </div>
+          ))}
+        </div>
+
+        {/* supporting copy */}
+        <div ref={n=>{if(n)el.current.cp=n}} style={{position:'absolute',bottom:'clamp(40px,6vh,80px)',right:'6vw',maxWidth:380,zIndex:2,willChange:'transform,opacity',opacity:phase>=4?1:0,transition:red?'none':'opacity .5s ease'}}>
+          <p style={{margin:0,fontFamily:'Geist',fontSize:'clamp(14px,1.1vw,17px)',lineHeight:1.6,opacity:.65}}>
+            White Label Resell is the production bench behind agencies. We produce the work. You own the relationship.
+          </p>
+        </div>
+
+        <div style={{position:'absolute',bottom:28,left:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3,zIndex:2}}>01</div>
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 02 OUR PURPOSE ═══ */
+const Purpose=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=stickyProgress(rc,vh);
+      const e=el.current;
+
+      /* YOUR AGENCY enters from left */
+      if(e.ya){
+        const op=range(p,0,.15);
+        const x=lerp(-40,0,op);
+        e.ya.style.transform=`translateX(${x}px)`;
+        e.ya.style.opacity=red?1:op;
+      }
+      /* OUR BENCH enters from right */
+      if(e.ob){
+        const op=range(p,0,.15);
+        const x=lerp(40,0,op);
+        e.ob.style.transform=`translateX(${x}px)`;
+        e.ob.style.opacity=red?1:op;
+      }
+      /* ThreeBar — fixed height, scaleY from bottom */
+      if(e.tb){
+        const sc=range(p,.15,.35);
+        e.tb.style.transform=`scaleY(${sc})`;
+      }
+      /* center line */
+      if(e.line){
+        const w=range(p,.2,.4);
+        e.line.style.transform=`scaleX(${w})`;
+      }
+      /* metadata */
+      if(e.ml)e.ml.style.opacity=range(p,.35,.5);
+      if(e.mr)e.mr.style.opacity=range(p,.35,.5);
+      /* desc */
+      if(e.desc)e.desc.style.opacity=range(p,.5,.65);
+      /* exit */
+      if(p>.82){
+        const ex=range(p,.82,1);
+        e.wrap.style.opacity=1-ex*.6;
+      }else{
+        e.wrap.style.opacity=1;
+      }
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();
+    window.addEventListener('scroll',on,{passive:true});
+    window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{height:'200vh',position:'relative',background:'#FFF',color:'#000'}}>
+      <div ref={n=>{if(n)el.current.wrap=n}} style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',justifyContent:'center',padding:'0 6vw',borderTop:'1px solid #000'}}>
+
+        <K s={red?{opacity:.5}:{}}>02 / Our purpose</K>
+
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'clamp(20px,4vw,60px)',marginBottom:'clamp(24px,3vh,40px)',position:'relative',flexWrap:'wrap'}}>
+
+          <div ref={n=>{if(n)el.current.ya=n}} style={{fontFamily:'Geist',fontSize:'clamp(48px,8vw,120px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.9,opacity:red?1:0,willChange:'transform'}}>
+            YOUR<br/>AGENCY.
+          </div>
+
+          <div style={{position:'relative',display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+            {/* ThreeBar — fixed height container, bars scale from bottom */}
+            <div ref={n=>{if(n)el.current.tb=n}} style={{display:'flex',gap:4,alignItems:'flex-end',height:60,transformOrigin:'bottom',transform:red?'scaleY(1)':'scaleY(0)',willChange:'transform'}}>
+              {[.66,1,.82].map((h,i)=><span key={i} style={{width:8,height:`${h*100}%`,background:'#000'}}/>)}
+            </div>
+            <div ref={n=>{if(n)el.current.line=n}} style={{width:'clamp(60px,10vw,140px)',height:1,background:'#000',transformOrigin:'center',transform:red?'scaleX(1)':'scaleX(0)'}}/>
+          </div>
+
+          <div ref={n=>{if(n)el.current.ob=n}} style={{fontFamily:'Geist',fontSize:'clamp(48px,8vw,120px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.9,opacity:red?1:0,willChange:'transform'}}>
+            OUR<br/>BENCH.
+          </div>
+        </div>
+
+        {/* metadata */}
+        <div style={{display:'flex',justifyContent:'space-between',maxWidth:600,marginBottom:'clamp(20px,3vh,40px)'}}>
+          <div ref={n=>{if(n)el.current.ml=n}} style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:red ? .5 : 0}}>CLIENT-FACING</div>
+          <div ref={n=>{if(n)el.current.mr=n}} style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:red ? .5 : 0}}>PRODUCTION</div>
+        </div>
+
+        {/* desc */}
+        <div ref={n=>{if(n)el.current.desc=n}} style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:'clamp(24px,3vw,48px)',maxWidth:900,opacity:red ? .7 : 0}}>
+          <p style={{margin:0,fontSize:'clamp(15px,1.2vw,18px)',lineHeight:1.65,opacity:.7}}>
+            You win the client. You own the pitch, the relationship, and the invoice. We run production behind the scenes — on your templates, in your voice, to your deadlines.
+          </p>
+          <p style={{margin:0,fontSize:'clamp(15px,1.2vw,18px)',lineHeight:1.65,opacity:.7}}>
+            Your clients never learn our name, and that is the entire point. Every report, every build, every dashboard ships under your brand.
+          </p>
+        </div>
+
+        <div style={{position:'absolute',bottom:28,left:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3}}>02</div>
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 03 OUR JOURNEY ═══ */
+const Journey=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=viewportProgress(rc,vh);
+      const e=el.current;
+
+      /* timeline fill */
+      if(e.line){
+        const sc=range(p,0,.6);
+        e.line.style.transform=`scaleX(${sc})`;
+      }
+      /* ThreeBar marker — position: left based on progress */
+      if(e.bar){
+        const markerP=clamp01(p/.6);
+        e.bar.style.left=`${markerP*100}%`;
+        e.bar.style.opacity=markerP>0?1:0;
+      }
+
+      /* milestones — stagger */
+      const thresholds=[.1,.3,.5];
+      for(let i=0;i<3;i++){
+        if(e[`m${i}`]){
+          const op=range(p,thresholds[i],thresholds[i]+.15);
+          const y=op<1?lerp(30,0,op):0;
+          e[`m${i}`].style.opacity=op;
+          e[`m1${i}`].style.transform=`translateY(${y}px)`;
+        }
+      }
+
+      /* parallax on title wrappers — allow signed values */
+      const parallaxData=[
+        {el:'t0',start:-20,end:10},
+        {el:'t1',start:30,end:-10},
+        {el:'t2',start:-40,end:20},
+      ];
+      parallaxData.forEach(({el:key,start,end})=>{
+        if(e[key]){
+          const x=lerp(start,end,p);
+          e[key].style.transform=`translateX(${x}px)`;
+        }
+      });
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();
+    window.addEventListener('scroll',on,{passive:true});
+    window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  const milestones=[
+    ['01','THE WORK','Started by doing the work — SEO, content, builds.'],
+    ['02','THE SYSTEM','Built systems to scale production without hiring.'],
+    ['03','THE BENCH','Became the bench behind agencies everywhere.'],
+  ];
+
+  return(
+    <section ref={sec} style={{background:'#000',color:'#FFF',padding:'clamp(80px,12vh,140px) 6vw',borderTop:'1px solid #FFF',position:'relative',minHeight:'120vh'}}>
+      <K>03 / Our journey</K>
+      <h2 style={{margin:'0 0 clamp(48px,6vh,80px)',fontFamily:'Geist',fontSize:'clamp(36px,5vw,72px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92}}>
+        WHAT'S STAYED<br/><span style={{fontWeight:300}}>THE SAME.</span>
+      </h2>
+
+      {/* horizontal line + marker */}
+      <div style={{position:'relative',height:1,background:'rgba(255,255,255,.12)',marginBottom:'clamp(48px,6vh,80px)'}}>
+        <div ref={n=>{if(n)el.current.line=n}} style={{position:'absolute',inset:0,background:'#FFF',transformOrigin:'left',transform:red?'scaleX(1)':'scaleX(0)'}}/>
+        <div ref={n=>{if(n)el.current.bar=n}} style={{position:'absolute',top:'50%',left:0,transform:'translate(-50%,-50%)',opacity:red?1:0,willChange:'left'}}>
+          <TB size={20} color="#FFF" gap={3}/>
+        </div>
+      </div>
+
+      {/* milestones */}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'clamp(24px,4vw,60px)'}}>
+        {milestones.map(([num,title,desc],i)=>(
+          <div key={num}>
+            <div ref={n=>{if(n)el.current[`t${i}`]=n}} style={{willChange:'transform'}}>
+              <div ref={n=>{if(n)el.current[`m${i}`]=n}} style={{opacity:red?1:0}}>
+                <div ref={n=>{if(n)el.current[`m1${i}`]=n}}>
+                  <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.4,marginBottom:12}}>{num}</div>
+                  <div style={{fontFamily:'Geist',fontSize:'clamp(24px,3vw,40px)',fontWeight:500,letterSpacing:'-.03em',lineHeight:1,marginBottom:12}}>{title}</div>
+                  <p style={{margin:0,fontSize:'clamp(13px,1vw,15px)',lineHeight:1.6,opacity:.55}}>{desc}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 04 HOW WE OPERATE ═══ */
+const Operations=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=stickyProgress(rc,vh);
+      const e=el.current;
+
+      const thresholds=[.05,.3,.55];
+      for(let i=0;i<3;i++){
+        const tp=range(p,thresholds[i],thresholds[i]+.2);
+        const dir=[-1,1,-1][i];
+        const x=tp<1?dir*(1-tp)*80:0;
+        if(e[`p${i}`]){
+          e[`p${i}`].style.transform=`translateX(${x}px)`;
+          e[`p${i}`].style.opacity=tp;
+        }
+        if(e[`bg${i}`]){
+          const y=(1-tp)*60;
+          e[`bg${i}`].style.transform=`translateY(${y}px)`;
+          e[`bg${i}`].style.opacity=tp*.04;
+        }
+        if(e[`tb${i}`]){
+          const tbP=range(p,thresholds[i]+.05,thresholds[i]+.2);
+          e[`tb${i}`].style.transform=`scaleY(${tbP})`;
+        }
+        if(e[`desc${i}`]){
+          const dP=range(p,thresholds[i]+.1,thresholds[i]+.25);
+          e[`desc${i}`].style.opacity=dP;
+        }
+      }
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();
+    window.addEventListener('scroll',on,{passive:true});
+    window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  const principles=[
+    {num:'01',title:'WHITE\nLABEL.',desc:'Every deliverable ships under your brand. Reports, decks, builds, dashboards — your identity, your client relationship.',bg:'WHITE LABEL'},
+    {num:'02',title:'CAPACITY\nWITHOUT\nPAYROLL.',desc:'Add SEO, content, development or analytics this month — no recruiting, no salaries, no bench risk.',bg:'CAPACITY'},
+    {num:'03',title:'RESULTS.\nYOUR CLIENT\nCAN SEE.',desc:'Every engagement is measured in leads, rankings and revenue. Numbers your client can verify.',bg:'RESULTS'},
+  ];
+
+  return(
+    <section ref={sec} style={{background:'#FFF',color:'#000',padding:'clamp(80px,12vh,140px) 6vw',borderTop:'1px solid #000',position:'relative',minHeight:'250vh'}}>
+      <div style={{position:'sticky',top:0,minHeight:'100vh',display:'flex',flexDirection:'column',justifyContent:'center'}}>
+        <K>04 / How we operate</K>
+        <h2 style={{margin:'0 0 clamp(48px,6vh,80px)',fontFamily:'Geist',fontSize:'clamp(36px,5vw,72px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92}}>
+          THREE<br/><span style={{fontWeight:300}}>PRINCIPLES.</span>
+        </h2>
+
+        <div style={{display:'flex',flexDirection:'column',gap:0}}>
+          {principles.map(({num,title,desc,bg},i)=>(
+            <div key={num} style={{
+              borderTop:i===0?'1px solid #000':'none',
+              borderBottom:'1px solid #000',
+              padding:'clamp(32px,4vh,56px) 0',
+              display:'grid',gridTemplateColumns:'60px 1fr 1.5fr',gap:'clamp(16px,3vw,48px)',alignItems:'start',
+              position:'relative',overflow:'hidden',
+            }}>
+              {/* background word */}
+              <div ref={n=>{if(n)el.current[`bg${i}`]=n}} style={{position:'absolute',top:'50%',left:'80px',fontFamily:'Geist',fontSize:'clamp(60px,8vw,100px)',fontWeight:700,letterSpacing:'-.04em',whiteSpace:'nowrap',opacity:red ? .04 : 0,pointerEvents:'none',color:'#000',willChange:'transform'}}>
+                {bg}
+              </div>
+
+              <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',opacity:.4,paddingTop:4,position:'relative',zIndex:1}}>{num}</div>
+
+              <div style={{position:'relative',zIndex:1}}>
+                <div ref={n=>{if(n)el.current[`p${i}`]=n}} style={{fontFamily:'Geist',fontSize:'clamp(28px,4vw,56px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92,whiteSpace:'pre-line',willChange:'transform',opacity:red?1:0}}>{title}</div>
+                <div ref={n=>{if(n)el.current[`tb${i}`]=n}} style={{display:'flex',gap:3,alignItems:'flex-end',height:48,overflow:'hidden',marginTop:12,transformOrigin:'bottom',transform:red?'scaleY(1)':'scaleY(0)',willChange:'transform'}}>
+                  {[.66,1,.82].map((h,j)=><span key={j} style={{width:6,height:`${h*100}%`,background:'#000'}}/>)}
+                </div>
+              </div>
+
+              <p ref={n=>{if(n)el.current[`desc${i}`]=n}} style={{margin:0,fontSize:'clamp(14px,1.1vw,17px)',lineHeight:1.65,opacity:red ? .65 : 0,paddingTop:8,position:'relative',zIndex:1}}>{desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 05 TEAM ═══ */
+const Team=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[seen,setSeen]=useState(red);
+
+  const team=[
+    {name:'Christian Clark',role:'Founder',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/1697726084291.jpeg'},
+    {name:'Himanshu Raikwar',role:'Lead Digital Designer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Himanshu-Raikwar-1024x1024.png'},
+    {name:'Mohammad Muneeb',role:'Lead SEO Specialist',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Mohammad-Muneeb-1024x1024.png'},
+    {name:'Anil Raikwar',role:'Analytics Engineer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Anil-Raikwar.png'},
+    {name:'Haider Ali',role:'SEO Specialist',image:'https://whitelabelresell.com/wp-content/uploads/elementor/thumbs/Haider-Ali-rqg7xs8a0bnqe844b332hjurrpz1a11ezafcq7nbb4.png'},
+    {name:'Brandon Carroll',role:'Acquisition Specialist',image:'https://whitelabelresell.com/wp-content/uploads/elementor/thumbs/Brandon-Carroll-rqg7xs8a0bnqe844b332hjurrpz1a11ezafcq7nbb4.png'},
+  ];
+
+  const offsets=[90,140,70,110,80,130];
+
+  /* entrance observer */
+  useEffect(()=>{
+    const s=sec.current;if(!s||red)return;
+    const io=new IntersectionObserver(([e])=>{if(e.isIntersecting){setSeen(true);io.disconnect()}},{threshold:.1,rootMargin:'0px 0px -10% 0px'});
+    io.observe(s);
+    return()=>io.disconnect();
+  },[red]);
+
+  /* scroll parallax — only inner images */
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=viewportProgress(rc,vh);
+      const e=el.current;
+      if(e.hl)e.hl.style.transform=`translateY(${lerp(0,-40,p)}px)`;
+      team.forEach((_,i)=>{
+        if(e[`img${i}`]){
+          const ty=lerp(-4,4,p);
+          e[`img${i}`].style.transform=`translateY(${ty}%)`;
+        }
+      });
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();
+    window.addEventListener('scroll',on,{passive:true});
+    window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{background:'#000',color:'#FFF',padding:'clamp(80px,12vh,140px) 6vw',borderTop:'1px solid #FFF',position:'relative'}}>
+      <div ref={n=>{if(n)el.current.hl=n}} style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:'clamp(40px,5vh,72px)',flexWrap:'wrap',gap:24,willChange:'transform'}}>
+        <div>
+          <K>05 / The team</K>
+          <h2 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(36px,5vw,72px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92}}>
+            THE PEOPLE<br/><span style={{fontWeight:300}}>BEHIND THE WORK.</span>
+          </h2>
+        </div>
+        <a href="team.html" style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,borderBottom:'1px solid rgba(255,255,255,.3)',paddingBottom:4}}>
+          VIEW THE FULL TEAM →
+        </a>
+      </div>
+
+      <div className="team-grid" style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'clamp(16px,2vw,24px)'}}>
+        {team.map(({name,role,image},i)=>{
+          const delay=i*100;
+          const offset=offsets[i];
+          return(
+            <div key={name} className="team-card" style={{
+              opacity:seen?1:0,
+              transform:seen?'translateY(0)':`translateY(${offset}px)`,
+              transition:red?'none':`opacity .7s ${EASE} ${delay}ms, transform .7s ${EASE} ${delay}ms`,
+            }}>
+              <div className="team-img-wrap" style={{aspectRatio:'1/1',marginBottom:16,overflow:'hidden',position:'relative'}}>
+                <div ref={n=>{if(n)el.current[`img${i}`]=n}} style={{width:'100%',height:'110%',position:'absolute',top:'-5%',left:0,willChange:'transform'}}>
+                  <img src={image} alt={`${name} — ${role}`} loading={i<3?'eager':'lazy'} style={{width:'100%',height:'100%',objectFit:'cover',display:'block',filter:'grayscale(100%)',transition:'.4s '+EASE}}/>
+                </div>
+              </div>
+              <div className="team-name" style={{fontFamily:'Geist',fontSize:'clamp(16px,1.3vw,20px)',fontWeight:500,letterSpacing:'-.02em',position:'relative',display:'inline-block'}}>
+                {name}
+                <span className="team-underline" style={{position:'absolute',bottom:-2,left:0,width:'100%',height:1,background:'#FFF',transformOrigin:'left',transform:'scaleX(0)',transition:'transform .4s '+EASE}}/>
+              </div>
+              <div className="team-role" style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',opacity:.45,marginTop:4,transition:'opacity .3s ease'}}>{role}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      <style>{`
+        .team-img-wrap:hover img{transform:scale(1.025)}
+        .team-card:hover .team-underline{transform:scaleX(1)!important}
+        .team-card:hover .team-role{opacity:.8!important}
+        @media(max-width:1024px){.team-grid{grid-template-columns:repeat(2,1fr)!important}}
+        @media(max-width:600px){.team-grid{grid-template-columns:1fr!important}}
+      `}</style>
+    </section>
+  );
+};
+
+/* ═══ 06 INSIDE THE BENCH ═══ */
+const Video=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=viewportProgress(rc,vh);
+      const e=el.current;
+      if(e.frame){
+        const inset=lerp(44,0,p);
+        e.frame.style.clipPath=`inset(${inset}% 0 ${inset}% 0)`;
+      }
+      if(e.hl)e.hl.style.transform=`translateY(${lerp(30,0,p)}px)`;
+      if(e.img)e.img.style.transform=`scale(${lerp(1.04,1,p)})`;
+      if(e.caption){
+        e.caption.style.opacity=p;
+        e.caption.style.transform=`translateY(${lerp(15,0,p)}px)`;
+      }
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();
+    window.addEventListener('scroll',on,{passive:true});
+    window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{background:'#000',color:'#FFF',padding:'clamp(80px,12vh,140px) 6vw',borderTop:'1px solid #FFF'}}>
+      <div ref={n=>{if(n)el.current.hl=n}} style={{willChange:'transform'}}>
+        <K>06 / Inside the bench</K>
+        <h2 style={{margin:'0 0 clamp(32px,4vh,56px)',fontFamily:'Geist',fontSize:'clamp(36px,5vw,72px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92}}>
+          SEE HOW<br/><span style={{fontWeight:300}}>IT WORKS.</span>
+        </h2>
+      </div>
+
+      <div ref={n=>{if(n)el.current.frame=n}} style={{width:'100%',aspectRatio:'16/9',background:'#111',position:'relative',overflow:'hidden',clipPath:red?'inset(0 0 0 0)':'inset(44% 0 44% 0)'}}>
+        <div ref={n=>{if(n)el.current.img=n}} style={{position:'absolute',inset:0,willChange:'transform'}}>
+          <iframe
+            src="https://player.vimeo.com/video/901595251?h=9ee652be42&badge=0&autopause=0&player_id=0"
+            style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',border:0}}
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+            title="White Label Resell — Inside the bench"
+          />
+        </div>
+        {/* fallback poster */}
+        <div className="video-fallback" style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',pointerEvents:'none',zIndex:0}}>
+          <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.2}}>INSIDE THE BENCH</div>
+        </div>
+      </div>
+
+      <div ref={n=>{if(n)el.current.caption=n}} style={{marginTop:20,display:'flex',justifyContent:'space-between',alignItems:'center',opacity:red?1:0,willChange:'transform,opacity'}}>
+        <span style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',opacity:.45}}>The production process — from scope to delivery</span>
+        <TB size={14} color="rgba(255,255,255,.3)" gap={2}/>
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 07 PROOF ═══ */
+const Proof=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=viewportProgress(rc,vh);
+      const e=el.current;
+
+      /* 66 — visible by default, shifts left */
+      if(e.num66){
+        const x=lerp(-30,0,p);
+        e.num66.style.transform=`translateX(${x}%)`;
+      }
+      /* arrow */
+      if(e.arrow){
+        const sc=range(p,.2,.45);
+        e.arrow.style.transform=`scaleX(${sc})`;
+      }
+      /* 444 — enters from right */
+      if(e.num444){
+        const x=lerp(30,0,p);
+        e.num444.style.transform=`translateX(${x}%)`;
+      }
+      /* ThreeBar near 444 */
+      if(e.tb){
+        const sc=range(p,.3,.5);
+        e.tb.style.transform=`scaleY(${sc})`;
+      }
+      /* label */
+      if(e.label){
+        e.label.style.opacity=range(p,.4,.6);
+      }
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();
+    window.addEventListener('scroll',on,{passive:true});
+    window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{background:'#FFF',color:'#000',padding:'clamp(80px,12vh,140px) 6vw',borderTop:'1px solid #000',overflow:'hidden'}}>
+      <K>07 / What the model produces</K>
+
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'clamp(16px,3vw,40px)',flexWrap:'wrap',marginBottom:'clamp(24px,3vh,40px)'}}>
+        <div ref={n=>{if(n)el.current.num66=n}} style={{fontFamily:'Geist',fontSize:'clamp(80px,14vw,200px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.9,willChange:'transform'}}>66</div>
+
+        <div ref={n=>{if(n)el.current.arrow=n}} style={{display:'flex',alignItems:'center',gap:8,transformOrigin:'left',transform:red?'scaleX(1)':'scaleX(0)'}}>
+          <div style={{width:'clamp(40px,6vw,80px)',height:2,background:'#000'}}/>
+          <TB size={20} color="#000" gap={3}/>
+          <div style={{width:'clamp(40px,6vw,80px)',height:2,background:'#000'}}/>
+        </div>
+
+        <div style={{position:'relative'}}>
+          <div ref={n=>{if(n)el.current.num444=n}} style={{fontFamily:'Geist',fontSize:'clamp(80px,14vw,200px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.9,willChange:'transform'}}>444</div>
+          <div ref={n=>{if(n)el.current.tb=n}} style={{position:'absolute',bottom:-8,right:0,display:'flex',gap:3,alignItems:'flex-end',height:48,overflow:'hidden',transformOrigin:'bottom',transform:red?'scaleY(1)':'scaleY(0)',willChange:'transform'}}>
+            {[.66,1,.82].map((h,i)=><span key={i} style={{width:5,height:`${h*100}%`,background:'#000'}}/>)}
+          </div>
+        </div>
+      </div>
+
+      <div ref={n=>{if(n)el.current.label=n}} style={{textAlign:'center',opacity:red ? .5 : 0}}>
+        <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginBottom:8}}>MONTHLY LEADS · GUILD GOLF CARTS</div>
+        <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',opacity:.35}}>JANUARY 2024 → JUNE 2025</div>
+      </div>
+
+      <div style={{textAlign:'center',marginTop:'clamp(32px,4vh,56px)'}}>
+        <a href="case-studies.html" style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,borderBottom:'1px solid rgba(0,0,0,.3)',paddingBottom:4}}>
+          SEE THE WORK →
+        </a>
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 08 CTA ═══ */
+const CTA=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[hov1,setHov1]=useState(false);
+  const[hov2,setHov2]=useState(false);
+  const[hovBtn,setHovBtn]=useState(false);
+  const invert=hovBtn;
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=viewportProgress(rc,vh);
+      const e=el.current;
+
+      if(e.hl)e.hl.style.transform=`translateY(${lerp(50,0,p)}px)`;
+      if(e.sub)e.sub.style.transform=`translateY(${lerp(20,0,p)}px)`;
+      if(e.btns)e.btns.style.transform=`translateY(${lerp(20,0,p)}px)`;
+
+      const sep=range(p,.15,.4);
+      if(e.b0)e.b0.style.transform=`translateX(${sep*-30}px) translateY(${lerp(-30,0,p)}px)`;
+      if(e.b1)e.b1.style.transform=`translateY(${lerp(-30,0,p)}px)`;
+      if(e.b2)e.b2.style.transform=`translateX(${sep*30}px) translateY(${lerp(-30,0,p)}px)`;
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();
+    window.addEventListener('scroll',on,{passive:true});
+    window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{minHeight:'100vh',background:invert?'#FFF':'#000',color:invert?'#000':'#FFF',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',padding:'80px 6vw',position:'relative',borderTop:`1px solid ${invert?'#000':'#FFF'}`,overflow:'hidden',transition:'background .5s cubic-bezier(.2,.8,.2,1), color .5s cubic-bezier(.2,.8,.2,1)'}}>
+
+      {/* ThreeBar that separates */}
+      <div style={{display:'flex',gap:8,alignItems:'flex-end',height:64,marginBottom:40}}>
+        {[0,1,2].map(i=>(
+          <div key={i} ref={n=>{if(n)el.current[`b${i}`]=n}} style={{
+            width:10,height:64,background:invert?'#000':'#FFF',
+            transformOrigin:'center',
+            willChange:'transform',
+            transition:'background .5s cubic-bezier(.2,.8,.2,1)',
+          }}/>
+        ))}
+      </div>
+
+      <div ref={n=>{if(n)el.current.hl=n}} style={{textAlign:'center',willChange:'transform'}}>
+        <h2 style={{
+          margin:0,fontFamily:'Geist',fontSize:'clamp(40px,7vw,110px)',fontWeight:500,
+          letterSpacing:'-.045em',lineHeight:1.02,
+        }}>
+          YOUR CLIENTS<br/>DON'T NEED<br/>ANOTHER VENDOR.
+        </h2>
+      </div>
+
+      <p ref={n=>{if(n)el.current.sub=n}} style={{marginTop:24,fontFamily:'Geist',fontSize:'clamp(16px,1.5vw,22px)',fontWeight:300,fontStyle:'italic',opacity:.5,willChange:'transform'}}>
+        You might.
+      </p>
+
+      <div ref={n=>{if(n)el.current.btns=n}} style={{display:'flex',gap:20,marginTop:48,flexWrap:'wrap',justifyContent:'center',willChange:'transform'}}>
+        <a href="contact.html"
+          onMouseEnter={()=>{setHov1(true);setHovBtn(true)}} onMouseLeave={()=>{setHov1(false);setHovBtn(false)}}
+          style={{
+            padding:'20px 36px',border:hov1?`1px solid ${invert?'#FFF':'#000'}`:`1px solid ${invert?'#000':'#FFF'}`,
+            background:hov1?(invert?'#000':'#FFF'):'transparent',color:hov1?(invert?'#FFF':'#000'):'currentColor',
+            fontFamily:'"Geist Mono",monospace',fontSize:13,letterSpacing:'.22em',
+            textTransform:'uppercase',fontWeight:600,
+            transition:'all .4s cubic-bezier(.2,.8,.2,1)',
+            display:'inline-flex',alignItems:'center',gap:12,
+          }}>
+          <TB size={14} color="currentColor"/>GET A QUOTE →
+        </a>
+        <a href="case-studies.html"
+          onMouseEnter={()=>setHov2(true)} onMouseLeave={()=>setHov2(false)}
+          style={{
+            padding:'20px 36px',border:`1px solid ${invert?'rgba(0,0,0,.2)':'rgba(255,255,255,.2)'}`,
+            background:'transparent',color:invert?'rgba(0,0,0,.6)':'rgba(255,255,255,.6)',
+            fontFamily:'"Geist Mono",monospace',fontSize:13,letterSpacing:'.22em',
+            textTransform:'uppercase',
+            transition:'all .4s cubic-bezier(.2,.8,.2,1)',
+          }}>
+          SEE OUR WORK →
+        </a>
+      </div>
+
+      <div style={{position:'absolute',bottom:28,left:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3}}>08</div>
+    </section>
+  );
+};
+
+/* ═══ FOOTER ═══ */
+const Footer=()=>(
+  <footer style={{background:'#000',color:'#FFF',borderTop:'1px solid #FFF',padding:'44px 6vw 32px'}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:28}}>
+      <div>
+        <TB size={20} color="#FFF" gap={3}/>
+        <div style={{marginTop:14,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5}}>© 2026 White Label Resell · est. 2018</div>
+      </div>
+      <div style={{display:'flex',gap:22,flexWrap:'wrap',fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase'}}>
+        <a href="index.html" style={{opacity:.8}}>Home</a>
+        <a href="case-studies.html" style={{opacity:.8}}>Work</a>
+        <a href="about.html" style={{opacity:.8}}>About</a>
+        <a href="team.html" style={{opacity:.8}}>Team</a>
+        <a href="contact.html" style={{opacity:.8}}>Get a Quote</a>
+        <a href="mailto:partners@whitelabelresell.com" style={{opacity:.8}}>partners@whitelabelresell.com</a>
+      </div>
+    </div>
+  </footer>
+);
+
+/* ═══ APP ═══ */
+const App=()=>(
+  <React.Fragment>
+    <HUD/>
+    <Hero/>
+    <Purpose/>
+    <Journey/>
+    <Operations/>
+    <Team/>
+    <Video/>
+    <Proof/>
+    <CTA/>
+    <Footer/>
+  </React.Fragment>
+);
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

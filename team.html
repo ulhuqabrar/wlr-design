@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Team — White Label Resell</title>
+<meta name="description" content="Meet the production bench behind agencies. 20 specialists powering SEO, content, development, and analytics." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:clip}
+html,body{background:#000;color:#FFF}
+body{font-family:'Geist',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip}
+body::-webkit-scrollbar{width:0}
+::selection{background:#FFF;color:#000}
+a{color:inherit;text-decoration:none}
+a:focus-visible{outline:2px solid #FFF;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="lib/react.production.min.js"></script>
+<script src="lib/react-dom.production.min.js"></script>
+<script src="lib/babel.min.js"></script>
+<script type="text/babel">
+const{useState,useEffect,useRef,useCallback}=React;
+
+/* ═══ HELPERS ═══ */
+const clamp01=v=>Math.max(0,Math.min(1,v));
+const range=(p,start,end)=>clamp01((p-start)/(end-start));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const stickyProgress=(rect,vh)=>{const sp=rect.height-vh;return sp>0?clamp01(-rect.top/sp):0};
+const viewportProgress=(rect,vh)=>{const trigger=vh*.85,end=vh*.15;return clamp01((trigger-rect.top)/(trigger-end))};
+const EASE='cubic-bezier(.16,1,.3,1)';
+
+/* ═══ HOOKS ═══ */
+const useReducedMotion=()=>{
+  const[r,setR]=useState(()=>window.matchMedia('(prefers-reduced-motion:reduce)').matches);
+  useEffect(()=>{
+    const mq=window.matchMedia('(prefers-reduced-motion:reduce)');
+    setR(mq.matches);
+    const h=e=>setR(e.matches);
+    mq.addEventListener('change',h);
+    return()=>mq.removeEventListener('change',h);
+  },[]);
+  return r;
+};
+
+/* ═══ SHARED ═══ */
+const TB=({size=16,color='currentColor',gap=2})=>(
+  <span style={{display:'inline-flex',alignItems:'flex-end',gap,height:size}}>
+    {[.66,1,.82].map((h,i)=><span key={i} style={{width:size*.22,height:`${h*100}%`,background:color}}/>)}
+  </span>
+);
+const K=({children,s={}})=>(
+  <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginBottom:16,...s}}>{children}</div>
+);
+
+/* ═══ TEAM DATA ═══ */
+const team=[
+  {name:'Christian Clark',role:'Founder',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/1697726084291.jpeg',dept:'leadership'},
+  {name:'Himanshu Raikwar',role:'Lead Digital Designer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Himanshu-Raikwar-1024x1024.png',dept:'design'},
+  {name:'Mohammad Muneeb',role:'Lead SEO Specialist',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Mohammad-Muneeb-1024x1024.png',dept:'seo'},
+  {name:'Anil Raikwar',role:'Analytics Engineer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Anil-Raikwar.png',dept:'analytics'},
+  {name:'Haider Ali',role:'SEO Specialist',image:'https://whitelabelresell.com/wp-content/uploads/elementor/thumbs/Haider-Ali-rqg7xs8a0bnqe844b332hjurrpz1a11ezafcq7nbb4.png',dept:'seo'},
+  {name:'Brandon Carroll',role:'Acquisition Specialist',image:'https://whitelabelresell.com/wp-content/uploads/elementor/thumbs/Brandon-Carroll-rqg7xs8a0bnqe844b332hjurrpz1a11ezafcq7nbb4.png',dept:'client-success'},
+  {name:'Taofeek Abdulrauf',role:'Cloud Engineer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Taofeek-Abdulrauf-1024x1024.png',dept:'engineering'},
+  {name:'Munir Nadayako',role:'Web Developer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Munir-Nadayako-1024x1022.png',dept:'development'},
+  {name:'Mcjethro Kalu',role:'Frontend Developer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Mcjethro-Kalu-1.png',dept:'development'},
+  {name:'Asad Ehsan',role:'Administrator',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Asad-Ehsan-1021x1024.png',dept:'operations'},
+  {name:'Zubair Tayyib',role:'Jr UI/UX Designer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Zubair-Muhammad-Tayyib.png',dept:'design'},
+  {name:'Sochima Chukwu',role:'Jr Web Developer',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Sochi-1024x1016.png',dept:'development'},
+  {name:'Nathaniel Duku',role:'Jr Client Success Manager',image:'https://whitelabelresell.com/wp-content/uploads/2025/01/Nathaniel-Abiodun-Duku-1019x1024.png',dept:'client-success'},
+];
+
+const departments=[
+  {id:'all',label:'ALL'},
+  {id:'leadership',label:'LEADERSHIP'},
+  {id:'design',label:'DESIGN'},
+  {id:'seo',label:'SEO'},
+  {id:'development',label:'DEVELOPMENT'},
+  {id:'analytics',label:'ANALYTICS'},
+  {id:'engineering',label:'ENGINEERING'},
+  {id:'client-success',label:'CLIENT SUCCESS'},
+  {id:'operations',label:'OPERATIONS'},
+];
+
+/* ═══ NAV ═══ */
+const NL=({label,href,active,mobile})=>{
+  const[h,setH]=useState(false);
+  return(
+    <a href={href} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
+      style={{color:'#FFF',position:'relative',paddingBottom:mobile?0:2,display:'block',padding:mobile?'16px 0':'0 0 2px 0'}}>
+      <span style={{position:'relative',zIndex:1,fontSize:mobile?28:11,letterSpacing:mobile?'.08em':'.22em'}}>{label}</span>
+      {!mobile&&<span style={{position:'absolute',bottom:0,left:0,width:'100%',height:1,background:'#FFF',transformOrigin:'left',transform:(h||active)?'scaleX(1)':'scaleX(0)',transition:'transform .3s cubic-bezier(.2,.8,.2,1)'}}/>}
+    </a>
+  );
+};
+const HUD=()=>{
+  const[mobOpen,setMobOpen]=useState(false);
+  useEffect(()=>{
+    if(mobOpen)document.body.style.overflow='hidden';
+    else document.body.style.overflow='';
+    return()=>{document.body.style.overflow=''};
+  },[mobOpen]);
+  return(
+    <React.Fragment>
+      <nav style={{position:'fixed',top:0,left:0,right:0,zIndex:100,mixBlendMode:'difference',pointerEvents:'none',padding:'20px 32px',display:'flex',justifyContent:'space-between',alignItems:'center',color:'#FFF',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase'}}>
+        <a href="index.html" style={{pointerEvents:'auto',display:'inline-flex',alignItems:'center',gap:12,color:'#FFF'}}>
+          <TB size={14} color="#FFF" gap={3}/><span className="hide-mobile">White Label Resell</span>
+        </a>
+        <span className="nav-desktop" style={{pointerEvents:'auto',display:'flex',gap:28}}>
+          <NL label="Home" href="index.html"/><NL label="Work" href="case-studies.html"/><NL label="About" href="about.html"/><NL label="Team" href="team.html" active/><NL label="Get a Quote" href="contact.html"/>
+        </span>
+        <button className="nav-mob-toggle" onClick={()=>setMobOpen(o=>!o)} style={{pointerEvents:'auto',background:'none',border:'none',color:'#FFF',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',cursor:'pointer',display:'none',padding:0}}>
+          {mobOpen?'CLOSE':'MENU'}
+        </button>
+      </nav>
+      {mobOpen&&<div className="nav-mob-overlay" style={{position:'fixed',inset:0,zIndex:99,background:'#000',display:'flex',flexDirection:'column',justifyContent:'center',padding:'80px 48px'}}>
+        <NL label="Home" href="index.html" mobile/><NL label="Work" href="case-studies.html" mobile/><NL label="About" href="about.html" mobile/><NL label="Team" href="team.html" mobile active/><NL label="Get a Quote" href="contact.html" mobile/>
+      </div>}
+      <style>{`
+        .hide-mobile{display:inline}
+        .nav-mob-toggle{display:none!important}
+        .nav-desktop{display:flex!important}
+        @media(max-width:768px){.hide-mobile{display:none}.nav-mob-toggle{display:block!important}.nav-desktop{display:none!important}}
+      `}</style>
+    </React.Fragment>
+  );
+};
+
+/* ═══ 01 HERO ═══ */
+const Hero=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[phase,setPhase]=useState(red?6:0);
+
+  useEffect(()=>{
+    if(red){setPhase(6);return}
+    const timers=[
+      setTimeout(()=>setPhase(1),100),
+      setTimeout(()=>setPhase(2),300),
+      setTimeout(()=>setPhase(3),500),
+      setTimeout(()=>setPhase(4),700),
+      setTimeout(()=>setPhase(5),900),
+      setTimeout(()=>setPhase(6),1100),
+    ];
+    return()=>timers.forEach(clearTimeout);
+  },[red]);
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=stickyProgress(rc,vh);
+      const e=el.current;
+      if(e.hl)e.hl.style.transform=`translateY(${p*-60}px)`;
+      if(e.tb)e.tb.style.transform=`translateY(calc(-50% + ${p*30}px))`;
+      if(e.cp){
+        e.cp.style.opacity=Math.max(0,1-p*3);
+        e.cp.style.transform=`translateY(${p*20}px)`;
+      }
+      if(e.marker)e.marker.style.transform=`translateY(${p*-15}px)`;
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{height:'180vh',position:'relative',background:'#000',color:'#FFF'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex',alignItems:'center',padding:'0 6vw'}}>
+
+        {/* section marker */}
+        <div ref={n=>{if(n)el.current.marker=n}} style={{position:'absolute',top:'clamp(80px,12vh,140px)',left:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:phase>=1?.3:0,transition:'opacity .6s ease'}}>
+          01 / TEAM
+        </div>
+
+        {/* structural rule */}
+        <div style={{position:'absolute',top:0,left:0,right:0,height:1,background:'rgba(255,255,255,.08)',zIndex:1}}>
+          <div style={{height:'100%',background:'rgba(255,255,255,.25)',transformOrigin:'left',transform:phase>=1?'scaleX(1)':'scaleX(0)',transition:red?'none':`transform .8s ${EASE}`}}/>
+        </div>
+
+        {/* ThreeBar */}
+        <div ref={n=>{if(n)el.current.tb=n}} style={{position:'absolute',top:'50%',right:'12vw',transform:'translateY(-50%)',zIndex:3}}>
+          <div style={{display:'flex',gap:12,alignItems:'flex-end',height:80}}>
+            {[0,1,2].map(i=>{
+              const enters=['120%','-120%','120%'];
+              return(
+                <div key={i} style={{
+                  width:14,
+                  transformOrigin:i===1?'top':'bottom',
+                  transform:phase>=3?'translateY(0)':'translateY('+enters[i]+')',
+                  transition:red?'none':`transform .8s ${EASE} ${i*100+300}ms`,
+                }}>
+                  <div style={{width:14,height:80,background:'#FFF',transformOrigin:'bottom',transform:`scaleY(${[.66,1,.82][i]})`}}/>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* headline */}
+        <div ref={n=>{if(n)el.current.hl=n}} style={{position:'relative',zIndex:2,maxWidth:'60vw',willChange:'transform'}}>
+          <div style={{overflow:'hidden'}}>
+            <h1 style={{
+              margin:0,fontFamily:'Geist',fontSize:'clamp(64px,10vw,160px)',fontWeight:500,
+              letterSpacing:'-.05em',lineHeight:.88,
+              transform:phase>=4?'translateY(0)':'translateY(110%)',
+              transition:red?'none':`transform .8s ${EASE}`,
+            }}>THE PEOPLE</h1>
+          </div>
+          <div style={{overflow:'hidden',marginTop:'clamp(4px,1vh,12px)'}}>
+            <h1 style={{
+              margin:0,fontFamily:'Geist',fontSize:'clamp(64px,10vw,160px)',fontWeight:300,fontStyle:'italic',
+              letterSpacing:'-.05em',lineHeight:.88,
+              transform:phase>=4?'translateY(0)':'translateY(110%)',
+              transition:red?'none':`transform .8s ${EASE} .1s`,
+            }}>BEHIND THE WORK.</h1>
+          </div>
+        </div>
+
+        {/* supporting copy */}
+        <div ref={n=>{if(n)el.current.cp=n}} style={{position:'absolute',bottom:'clamp(40px,6vh,80px)',right:'6vw',maxWidth:380,zIndex:2,opacity:phase>=5?1:0,transition:red?'none':'opacity .6s ease'}}>
+          <p style={{margin:0,fontFamily:'Geist',fontSize:'clamp(14px,1.1vw,17px)',lineHeight:1.6,opacity:.65}}>
+            Every profile verified against the live bench. Every name a real person doing real work under your brand.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 02 TEAM INTRO ═══ */
+const TeamIntro=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=stickyProgress(rc,vh);
+      const e=el.current;
+
+      if(e.num){
+        const sc=range(p,0,.3);
+        e.num.style.transform=`scale(${lerp(.8,1,sc)})`;
+        e.num.style.opacity=sc;
+      }
+      if(e.tb){
+        const sc=range(p,.15,.4);
+        e.tb.style.transform=`scaleY(${sc})`;
+      }
+      if(e.line){
+        const w=range(p,.25,.5);
+        e.line.style.transform=`scaleX(${w})`;
+      }
+      if(e.label)e.label.style.opacity=range(p,.4,.6);
+      if(e.desc)e.desc.style.opacity=range(p,.55,.75);
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{height:'180vh',position:'relative',background:'#FFF',color:'#000'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',justifyContent:'center',padding:'0 6vw',borderTop:'1px solid #000'}}>
+
+        <K s={red?{opacity:.5}:{}}>02 / The bench</K>
+
+        <div style={{display:'flex',alignItems:'center',gap:'clamp(24px,4vw,60px)',marginBottom:'clamp(24px,3vh,40px)'}}>
+          <div ref={n=>{if(n)el.current.num=n}} style={{fontFamily:'Geist',fontSize:'clamp(80px,14vw,200px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.9,opacity:red?1:0}}>
+            13
+          </div>
+
+          <div style={{position:'relative',display:'flex',flexDirection:'column',alignItems:'center',gap:8}}>
+            <div ref={n=>{if(n)el.current.tb=n}} style={{display:'flex',gap:4,alignItems:'flex-end',height:60,transformOrigin:'bottom',transform:red?'scaleY(1)':'scaleY(0)'}}>
+              {[.66,1,.82].map((h,i)=><span key={i} style={{width:8,height:`${h*100}%`,background:'#000'}}/>)}
+            </div>
+            <div ref={n=>{if(n)el.current.line=n}} style={{width:'clamp(60px,10vw,140px)',height:1,background:'#000',transformOrigin:'center',transform:red?'scaleX(1)':'scaleX(0)'}}/>
+          </div>
+
+          <div style={{fontFamily:'Geist',fontSize:'clamp(36px,5vw,72px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92}}>
+            SPECIALISTS.<br/><span style={{fontWeight:300}}>ONE BENCH.</span>
+          </div>
+        </div>
+
+        <div ref={n=>{if(n)el.current.label=n}} style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:red?.5:0,marginBottom:'clamp(16px,2vh,24px)'}}>
+          PRODUCTION · DESIGN · SEO · DEVELOPMENT · ANALYTICS
+        </div>
+
+        <div ref={n=>{if(n)el.current.desc=n}} style={{maxWidth:600,opacity:red?.7:0}}>
+          <p style={{margin:0,fontSize:'clamp(15px,1.2vw,18px)',lineHeight:1.65,opacity:.7}}>
+            Not a directory. A functioning production engine. Every specialist scoped, briefed, and shipping under your brand from day one.
+          </p>
+        </div>
+
+        <div style={{position:'absolute',bottom:28,left:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3}}>02</div>
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 03 TEAM ROSTER ═══ */
+const TeamRoster=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[activeDept,setActiveDept]=useState('all');
+  const[seen,setSeen]=useState(red);
+
+  useEffect(()=>{
+    const s=sec.current;if(!s||red)return;
+    const io=new IntersectionObserver(([e])=>{if(e.isIntersecting){setSeen(true);io.disconnect()}},{threshold:.1,rootMargin:'0px 0px -10% 0px'});
+    io.observe(s);
+    return()=>io.disconnect();
+  },[red]);
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=viewportProgress(rc,vh);
+      const e=el.current;
+      if(e.hl)e.hl.style.transform=`translateY(${lerp(0,-40,p)}px)`;
+      team.forEach((_,i)=>{
+        if(e[`img${i}`]){
+          const ty=lerp(-4,4,p);
+          e[`img${i}`].style.transform=`translateY(${ty}%)`;
+        }
+      });
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  const filtered=activeDept==='all'?team:team.filter(m=>m.dept===activeDept);
+
+  return(
+    <section ref={sec} style={{background:'#000',color:'#FFF',padding:'clamp(80px,12vh,140px) 6vw',borderTop:'1px solid #FFF',position:'relative'}}>
+
+      {/* header */}
+      <div ref={n=>{if(n)el.current.hl=n}} style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',marginBottom:'clamp(32px,4vh,56px)',flexWrap:'wrap',gap:24,willChange:'transform'}}>
+        <div>
+          <K>03 / The roster</K>
+          <h2 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(36px,5vw,72px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92}}>
+            THE PEOPLE<br/><span style={{fontWeight:300}}>BEHIND THE WORK.</span>
+          </h2>
+        </div>
+      </div>
+
+      {/* department filter */}
+      <div style={{display:'flex',gap:16,flexWrap:'wrap',marginBottom:'clamp(32px,4vh,56px)',borderBottom:'1px solid rgba(255,255,255,.12)',paddingBottom:16}}>
+        {departments.map(d=>(
+          <button key={d.id} onClick={()=>setActiveDept(d.id)} style={{
+            background:'none',border:'none',cursor:'pointer',
+            fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',
+            color:'#FFF',opacity:activeDept===d.id?1:.4,
+            borderBottom:activeDept===d.id?'1px solid #FFF':'1px solid transparent',
+            paddingBottom:4,transition:'all .3s ease',
+          }}>{d.label}</button>
+        ))}
+      </div>
+
+      {/* uniform grid */}
+      <div className="roster-grid">
+        {filtered.map((member,i)=>{
+          const delay=i*80;
+          const offset=60+((i*37)%40);
+          return(
+            <div key={member.name} className="roster-card" style={{
+              opacity:seen?1:0,
+              transform:seen?'translateY(0)':`translateY(${offset}px)`,
+              transition:red?'none':`opacity .7s ${EASE} ${delay}ms, transform .7s ${EASE} ${delay}ms`,
+            }}>
+              <div className="roster-img-wrap" style={{position:'relative',overflow:'hidden',background:'#111'}}>
+                <div ref={n=>{if(n)el.current[`img${i}`]=n}} style={{width:'100%',height:'115%',position:'absolute',top:'-7.5%',left:0,willChange:'transform'}}>
+                  <img src={member.image} alt={`${member.name} — ${member.role}`} loading={i<4?'eager':'lazy'} style={{width:'100%',height:'100%',objectFit:'cover',display:'block',filter:'grayscale(100%) contrast(1.1)',transition:'.5s '+EASE}}/>
+                </div>
+                <div className="roster-index" style={{position:'absolute',top:12,left:12,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',opacity:.5}}>
+                  /{String(i+1).padStart(2,'0')}
+                </div>
+              </div>
+              <div style={{padding:'16px 0'}}>
+                <div className="roster-name" style={{fontFamily:'Geist',fontSize:'clamp(16px,1.4vw,22px)',fontWeight:500,letterSpacing:'-.02em',position:'relative',display:'inline-block'}}>
+                  {member.name}
+                  <span className="roster-underline" style={{position:'absolute',bottom:-2,left:0,width:'100%',height:1,background:'#FFF',transformOrigin:'left',transform:'scaleX(0)',transition:'transform .4s '+EASE}}/>
+                </div>
+                <div className="roster-role" style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',opacity:.45,marginTop:4,transition:'opacity .3s ease'}}>{member.role}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <style>{`
+        .roster-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(16px,2vw,24px)}
+        .roster-img-wrap{aspect-ratio:1/1}
+        .roster-img-wrap:hover img{transform:scale(1.04)}
+        .roster-card:hover .roster-underline{transform:scaleX(1)!important}
+        .roster-card:hover .roster-role{opacity:.8!important}
+        @media(max-width:1024px){.roster-grid{grid-template-columns:repeat(3,1fr)!important}}
+        @media(max-width:768px){.roster-grid{grid-template-columns:repeat(2,1fr)!important}}
+        @media(max-width:480px){.roster-grid{grid-template-columns:1fr!important}}
+      `}</style>
+
+      <div style={{position:'absolute',bottom:28,left:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3}}>03</div>
+    </section>
+  );
+};
+
+/* ═══ 04 DEPARTMENT SYSTEM ═══ */
+const DepartmentSystem=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=stickyProgress(rc,vh);
+      const e=el.current;
+
+      const thresholds=[.05,.25,.45,.65];
+      const depts=['DESIGN','SEO','DEVELOPMENT','ANALYTICS'];
+      for(let i=0;i<4;i++){
+        const tp=range(p,thresholds[i],thresholds[i]+.15);
+        const dir=i%2===0?-1:1;
+        const x=tp<1?dir*(1-tp)*60:0;
+        if(e[`d${i}`]){
+          e[`d${i}`].style.transform=`translateX(${x}px)`;
+          e[`d${i}`].style.opacity=tp;
+        }
+        if(e[`tb${i}`]){
+          const tbP=range(p,thresholds[i]+.05,thresholds[i]+.15);
+          e[`tb${i}`].style.transform=`scaleY(${tbP})`;
+        }
+        if(e[`count${i}`]){
+          e[`count${i}`].style.opacity=range(p,thresholds[i]+.1,thresholds[i]+.2);
+        }
+      }
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  const deptData=[
+    {name:'DESIGN',count:2,desc:'UI systems, landing pages, brand identity'},
+    {name:'SEO',count:2,desc:'Technical, content, local, strategy'},
+    {name:'DEVELOPMENT',count:3,desc:'WordPress, eCommerce, custom builds'},
+    {name:'ANALYTICS',count:1,desc:'GA4, GTM, reporting, dashboards'},
+  ];
+
+  return(
+    <section ref={sec} style={{height:'250vh',position:'relative',background:'#FFF',color:'#000'}}>
+      <div style={{position:'sticky',top:0,minHeight:'100vh',display:'flex',flexDirection:'column',justifyContent:'center',padding:'0 6vw',borderTop:'1px solid #000'}}>
+
+        <K s={red?{opacity:.5}:{}}>04 / Department system</K>
+        <h2 style={{margin:'0 0 clamp(48px,6vh,80px)',fontFamily:'Geist',fontSize:'clamp(36px,5vw,72px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92}}>
+          THE<br/><span style={{fontWeight:300}}>ORGANIZATION.</span>
+        </h2>
+
+        <div style={{display:'flex',flexDirection:'column',gap:0}}>
+          {deptData.map(({name,count,desc},i)=>(
+            <div key={name} style={{
+              borderTop:i===0?'1px solid #000':'none',
+              borderBottom:'1px solid #000',
+              padding:'clamp(24px,3vh,40px) 0',
+              display:'grid',gridTemplateColumns:'60px 1fr 1fr',gap:'clamp(16px,3vw,48px)',alignItems:'start',
+            }}>
+              <div ref={n=>{if(n)el.current[`d${i}`]=n}} style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',opacity:red?.4:0}}>
+                /0{i+1}
+              </div>
+
+              <div>
+                <div style={{fontFamily:'Geist',fontSize:'clamp(28px,4vw,56px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92,opacity:red?1:0}}>{name}</div>
+                <div ref={n=>{if(n)el.current[`tb${i}`]=n}} style={{display:'flex',gap:3,alignItems:'flex-end',height:40,overflow:'hidden',marginTop:12,transformOrigin:'bottom',transform:red?'scaleY(1)':'scaleY(0)'}}>
+                  {[.66,1,.82].map((h,j)=><span key={j} style={{width:5,height:`${h*100}%`,background:'#000'}}/>)}
+                </div>
+              </div>
+
+              <div>
+                <div ref={n=>{if(n)el.current[`count${i}`]=n}} style={{fontFamily:'Geist',fontSize:'clamp(36px,4vw,56px)',fontWeight:500,letterSpacing:'-.03em',lineHeight:1,opacity:red?1:0}}>
+                  {count}
+                </div>
+                <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',opacity:.45,marginTop:8}}>
+                  {desc}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{position:'absolute',bottom:28,left:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3}}>04</div>
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 05 HOW WE WORK ═══ */
+const HowWeWork=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=stickyProgress(rc,vh);
+      const e=el.current;
+
+      const steps=['client','wlr','production','delivery'];
+      const thresholds=[.05,.25,.45,.65];
+      for(let i=0;i<4;i++){
+        const tp=range(p,thresholds[i],thresholds[i]+.2);
+        if(e[`step${i}`]){
+          e[`step${i}`].style.transform=`translateY(${(1-tp)*40}px)`;
+          e[`step${i}`].style.opacity=tp;
+        }
+        if(e[`arrow${i}`]){
+          const ap=range(p,thresholds[i]+.15,thresholds[i]+.3);
+          e[`arrow${i}`].style.transform=`scaleY(${ap})`;
+        }
+      }
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  const steps=[
+    {label:'CLIENT',sub:'Your agency, your relationship'},
+    {label:'WHITE LABEL RESELL',sub:'Production bench activates'},
+    {label:'PRODUCTION',sub:'SEO, content, dev, analytics'},
+    {label:'DELIVERY',sub:'Shipped under your brand'},
+  ];
+
+  return(
+    <section ref={sec} style={{height:'200vh',position:'relative',background:'#000',color:'#FFF'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex',flexDirection:'column',justifyContent:'center',padding:'0 6vw',borderTop:'1px solid #FFF'}}>
+
+        <K>05 / How we work</K>
+        <h2 style={{margin:'0 0 clamp(48px,6vh,80px)',fontFamily:'Geist',fontSize:'clamp(36px,5vw,72px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92}}>
+          THE<br/><span style={{fontWeight:300}}>OPERATING MODEL.</span>
+        </h2>
+
+        <div style={{display:'flex',flexDirection:'column',alignItems:'flex-start',gap:0}}>
+          {steps.map(({label,sub},i)=>(
+            <div key={label} style={{display:'flex',alignItems:'flex-start',gap:'clamp(16px,3vw,40px)'}}>
+              <div ref={n=>{if(n)el.current[`step${i}`]=n}} style={{opacity:red?1:0,willChange:'transform,opacity',minWidth:'clamp(200px,30vw,400px)'}}>
+                <div style={{fontFamily:'Geist',fontSize:'clamp(24px,3vw,40px)',fontWeight:500,letterSpacing:'-.03em',lineHeight:1}}>
+                  {label}
+                </div>
+                <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',opacity:.45,marginTop:8}}>
+                  {sub}
+                </div>
+              </div>
+              {i<steps.length-1&&(
+                <div ref={n=>{if(n)el.current[`arrow${i}`]=n}} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:0,transformOrigin:'top',transform:red?'scaleY(1)':'scaleY(0)',paddingTop:8}}>
+                  <div style={{width:1,height:40,background:'rgba(255,255,255,.3)'}}/>
+                  <TB size={16} color="rgba(255,255,255,.5)" gap={2}/>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div style={{position:'absolute',bottom:28,left:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3}}>05</div>
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 06 CTA ═══ */
+const CTA=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[hov1,setHov1]=useState(false);
+  const[hov2,setHov2]=useState(false);
+  const[hovBtn,setHovBtn]=useState(false);
+  const invert=hovBtn;
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=viewportProgress(rc,vh);
+      const e=el.current;
+      if(e.hl)e.hl.style.transform=`translateY(${lerp(50,0,p)}px)`;
+      if(e.sub)e.sub.style.transform=`translateY(${lerp(20,0,p)}px)`;
+      if(e.btns)e.btns.style.transform=`translateY(${lerp(20,0,p)}px)`;
+      if(e.b0)e.b0.style.transform=`translateX(${range(p,.15,.4)*-30}px) translateY(${lerp(-30,0,p)}px)`;
+      if(e.b1)e.b1.style.transform=`translateY(${lerp(-30,0,p)}px)`;
+      if(e.b2)e.b2.style.transform=`translateX(${range(p,.15,.4)*30}px) translateY(${lerp(-30,0,p)}px)`;
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{minHeight:'100vh',background:invert?'#FFF':'#000',color:invert?'#000':'#FFF',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',padding:'80px 6vw',position:'relative',borderTop:`1px solid ${invert?'#000':'#FFF'}`,overflow:'hidden',transition:'background .5s cubic-bezier(.2,.8,.2,1), color .5s cubic-bezier(.2,.8,.2,1)'}}>
+
+      <div style={{display:'flex',gap:8,alignItems:'flex-end',height:64,marginBottom:40}}>
+        {[0,1,2].map(i=>(
+          <div key={i} ref={n=>{if(n)el.current[`b${i}`]=n}} style={{width:10,height:64,background:invert?'#000':'#FFF',willChange:'transform',transition:'background .5s cubic-bezier(.2,.8,.2,1)'}}/>
+        ))}
+      </div>
+
+      <div ref={n=>{if(n)el.current.hl=n}} style={{textAlign:'center',willChange:'transform'}}>
+        <h2 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(40px,7vw,110px)',fontWeight:500,letterSpacing:'-.045em',lineHeight:1.02}}>
+          YOUR CLIENTS<br/>DON'T NEED<br/>ANOTHER VENDOR.
+        </h2>
+      </div>
+
+      <p ref={n=>{if(n)el.current.sub=n}} style={{marginTop:24,fontFamily:'Geist',fontSize:'clamp(16px,1.5vw,22px)',fontWeight:300,fontStyle:'italic',opacity:.5,willChange:'transform'}}>
+        You might.
+      </p>
+
+      <div ref={n=>{if(n)el.current.btns=n}} style={{display:'flex',gap:20,marginTop:48,flexWrap:'wrap',justifyContent:'center',willChange:'transform'}}>
+        <a href="contact.html"
+          onMouseEnter={()=>{setHov1(true);setHovBtn(true)}} onMouseLeave={()=>{setHov1(false);setHovBtn(false)}}
+          style={{
+            padding:'20px 36px',border:hov1?`1px solid ${invert?'#FFF':'#000'}`:`1px solid ${invert?'#000':'#FFF'}`,
+            background:hov1?(invert?'#000':'#FFF'):'transparent',color:hov1?(invert?'#FFF':'#000'):'currentColor',
+            fontFamily:'"Geist Mono",monospace',fontSize:13,letterSpacing:'.22em',
+            textTransform:'uppercase',fontWeight:600,
+            transition:'all .4s cubic-bezier(.2,.8,.2,1)',
+            display:'inline-flex',alignItems:'center',gap:12,
+          }}>
+          <TB size={14} color="currentColor"/>GET A QUOTE →
+        </a>
+        <a href="case-studies.html"
+          onMouseEnter={()=>setHov2(true)} onMouseLeave={()=>setHov2(false)}
+          style={{
+            padding:'20px 36px',border:`1px solid ${invert?'rgba(0,0,0,.2)':'rgba(255,255,255,.2)'}`,
+            background:'transparent',color:invert?'rgba(0,0,0,.6)':'rgba(255,255,255,.6)',
+            fontFamily:'"Geist Mono",monospace',fontSize:13,letterSpacing:'.22em',
+            textTransform:'uppercase',
+            transition:'all .4s cubic-bezier(.2,.8,.2,1)',
+          }}>
+          SEE OUR WORK →
+        </a>
+      </div>
+
+      <div style={{position:'absolute',bottom:28,left:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3}}>06</div>
+    </section>
+  );
+};
+
+/* ═══ FOOTER ═══ */
+const Footer=()=>(
+  <footer style={{background:'#000',color:'#FFF',borderTop:'1px solid #FFF',padding:'44px 6vw 32px'}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:28}}>
+      <div>
+        <TB size={20} color="#FFF" gap={3}/>
+        <div style={{marginTop:14,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5}}>© 2026 White Label Resell · est. 2018</div>
+      </div>
+      <div style={{display:'flex',gap:22,flexWrap:'wrap',fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase'}}>
+        <a href="index.html" style={{opacity:.8}}>Home</a>
+        <a href="case-studies.html" style={{opacity:.8}}>Work</a>
+        <a href="about.html" style={{opacity:.8}}>About</a>
+        <a href="team.html" style={{opacity:.8}}>Team</a>
+        <a href="contact.html" style={{opacity:.8}}>Get a Quote</a>
+        <a href="mailto:partners@whitelabelresell.com" style={{opacity:.8}}>partners@whitelabelresell.com</a>
+      </div>
+    </div>
+  </footer>
+);
+
+/* ═══ APP ═══ */
+const App=()=>(
+  <React.Fragment>
+    <HUD/>
+    <Hero/>
+    <TeamIntro/>
+    <TeamRoster/>
+    <DepartmentSystem/>
+    <HowWeWork/>
+    <CTA/>
+    <Footer/>
+  </React.Fragment>
+);
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

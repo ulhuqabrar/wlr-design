@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Get a Quote — White Label Resell</title>
+<meta name="description" content="Get a quote from White Label Resell. White-label SEO, content, web, paid media and analytics delivered under your agency's brand." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:clip}
+html,body{background:#000;color:#FFF}
+body{font-family:'Geist',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip}
+body::-webkit-scrollbar{width:0}
+::selection{background:#FFF;color:#000}
+a{color:inherit;text-decoration:none}
+a:focus-visible{outline:2px solid #FFF;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="lib/react.production.min.js"></script>
+<script src="lib/react-dom.production.min.js"></script>
+<script src="lib/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useRef}=React;
+
+/* ═══ HELPERS ═══ */
+const clamp01=v=>Math.max(0,Math.min(1,v));
+const range=(p,start,end)=>clamp01((p-start)/(end-start));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const stickyProgress=(rect,vh)=>{const sp=rect.height-vh;return sp>0?clamp01(-rect.top/sp):0};
+const viewportProgress=(rect,vh)=>{const trigger=vh*.85,end=vh*.15;return clamp01((trigger-rect.top)/(trigger-end))};
+
+/* ═══ HOOKS ═══ */
+const useReducedMotion=()=>{
+  const[r,setR]=useState(()=>window.matchMedia('(prefers-reduced-motion:reduce)').matches);
+  useEffect(()=>{const mq=window.matchMedia('(prefers-reduced-motion:reduce)');setR(mq.matches);const h=e=>setR(e.matches);mq.addEventListener('change',h);return()=>mq.removeEventListener('change',h)},[]);
+  return r;
+};
+
+/* ═══ SHARED ═══ */
+const TB=({size=16,color='currentColor',gap=2})=>(
+  <span style={{display:'inline-flex',alignItems:'flex-end',gap,height:size}}>
+    {[.66,1,.82].map((h,i)=><span key={i} style={{width:size*.22,height:`${h*100}%`,background:color}}/>)}
+  </span>
+);
+const K=({children,s={}})=>(
+  <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginBottom:16,...s}}>{children}</div>
+);
+const EASE='cubic-bezier(.16,1,.3,1)';
+
+/* ═══ NAV ═══ */
+const NL=({label,href,active,mobile})=>{
+  const[h,setH]=useState(false);
+  return(
+    <a href={href} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
+      style={{color:'#FFF',position:'relative',paddingBottom:mobile?0:2,display:'block',padding:mobile?'16px 0':'0 0 2px 0'}}>
+      <span style={{position:'relative',zIndex:1,fontSize:mobile?28:11,letterSpacing:mobile?'.08em':'.22em'}}>{label}</span>
+      {!mobile&&<span style={{position:'absolute',bottom:0,left:0,width:'100%',height:1,background:'#FFF',transformOrigin:'left',transform:(h||active)?'scaleX(1)':'scaleX(0)',transition:'transform .3s cubic-bezier(.2,.8,.2,1)'}}/>}
+    </a>
+  );
+};
+const HUD=()=>{
+  const red=useReducedMotion();
+  const[mobOpen,setMobOpen]=useState(false);
+  useEffect(()=>{if(mobOpen)document.body.style.overflow='hidden';else document.body.style.overflow='';return()=>{document.body.style.overflow=''}},[mobOpen]);
+  return(
+    <React.Fragment>
+      <nav style={{position:'fixed',top:0,left:0,right:0,zIndex:100,mixBlendMode:'difference',pointerEvents:'none',padding:'20px 32px',display:'flex',justifyContent:'space-between',alignItems:'center',color:'#FFF',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase'}}>
+        <a href="index.html" style={{pointerEvents:'auto',display:'inline-flex',alignItems:'center',gap:12,color:'#FFF'}}>
+          <TB size={14} color="#FFF" gap={3}/><span className="hide-mobile">White Label Resell</span>
+        </a>
+        <span className="nav-desktop" style={{pointerEvents:'auto',display:'flex',gap:28}}>
+          <NL label="Home" href="index.html"/><NL label="Work" href="case-studies.html"/><NL label="About" href="about.html"/><NL label="Team" href="team.html"/><NL label="Get a Quote" href="contact.html" active/>
+        </span>
+        <button className="nav-mob-toggle" onClick={()=>setMobOpen(o=>!o)} style={{pointerEvents:'auto',background:'none',border:'none',color:'#FFF',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',cursor:'pointer',display:'none',padding:0}}>
+          {mobOpen?'CLOSE':'MENU'}
+        </button>
+      </nav>
+      {mobOpen&&<div className="nav-mob-overlay" style={{position:'fixed',inset:0,zIndex:99,background:'#000',display:'flex',flexDirection:'column',justifyContent:'center',padding:'80px 48px'}}>
+        <NL label="Home" href="index.html" mobile/><NL label="Work" href="case-studies.html" mobile/><NL label="About" href="about.html" mobile/><NL label="Team" href="team.html" mobile/><NL label="Get a Quote" href="contact.html" mobile active/>
+      </div>}
+      <style>{`.hide-mobile{display:inline}.nav-mob-toggle{display:none!important}.nav-desktop{display:flex!important}@media(max-width:768px){.hide-mobile{display:none}.nav-mob-toggle{display:block!important}.nav-desktop{display:none!important}}`}</style>
+    </React.Fragment>
+  );
+};
+
+/* ═══ SCROLL PERCENTAGE ═══ */
+const ScrollPct=()=>{
+  const ref=useRef(null);
+  useEffect(()=>{
+    let r=0,tr=0;
+    const u=()=>{r=0;const h=document.documentElement.scrollHeight-window.innerHeight;const p=h>0?clamp01(window.scrollY/h):0;if(ref.current)ref.current.textContent=String(Math.round(p*100)).padStart(2,'0')+'%'};
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    window.addEventListener('scroll',on,{passive:true});
+    return()=>{window.removeEventListener('scroll',on);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[]);
+  return <div ref={ref} style={{position:'fixed',bottom:28,right:32,zIndex:100,mixBlendMode:'difference',fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3,pointerEvents:'none',color:'#FFF'}}>00%</div>;
+};
+
+/* ═══ 01 HERO ═══ */
+const Hero=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[phase,setPhase]=useState(red?7:0);
+
+  useEffect(()=>{
+    if(red){setPhase(7);return}
+    const timers=[
+      setTimeout(()=>setPhase(1),0),
+      setTimeout(()=>setPhase(2),200),
+      setTimeout(()=>setPhase(3),350),
+      setTimeout(()=>setPhase(4),500),
+      setTimeout(()=>setPhase(5),700),
+      setTimeout(()=>setPhase(6),900),
+      setTimeout(()=>setPhase(7),1100),
+    ];
+    return()=>timers.forEach(clearTimeout);
+  },[red]);
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=stickyProgress(rc,vh);
+      const e=el.current;
+      try{
+        if(e.hl)e.hl.style.transform=`translateY(${lerp(0,-120,p)}px)`;
+        if(e.hl2)e.hl2.style.transform=`translateY(${lerp(0,-80,p)}px)`;
+        if(e.tbWrap)e.tbWrap.style.transform=`translateY(${lerp(0,-180,p)}px) rotate(${lerp(0,3,p)}deg)`;
+        if(e.bg)e.bg.style.transform=`translateY(calc(-50% + ${lerp(0,150,p)}px))`;
+        if(e.meta)e.meta.style.transform=`translateY(${lerp(0,20,p)}px)`;
+        if(e.rule)e.rule.style.transform=`scaleX(${lerp(1,1.15,p)})`;
+        if(e.collapse)e.collapse.style.transform=`scaleY(${lerp(1,.7,range(p,.6,1))})`;
+        if(e.tbExtend){const ext=p>.5?lerp(0,120,range(p,.5,1)):0;e.tbExtend.style.height=ext+'px';}
+      }catch(err){console.error('Hero scroll error:',err)}
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();
+    window.addEventListener('scroll',on,{passive:true});
+    window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  /* All content visible by default. Animation wraps content in overflow:hidden masks. */
+  return(
+    <section ref={sec} style={{height:'200vh',position:'relative',background:'#000',color:'#FFF'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex',alignItems:'center'}}>
+
+        {/* structural vertical rule — visible by default */}
+        <div style={{position:'absolute',top:0,left:'42vw',width:1,height:'100vh',background:'rgba(255,255,255,.06)',zIndex:1}}>
+          <div ref={n=>{if(n)el.current.rule=n}} style={{height:'100%',background:'rgba(255,255,255,.2)',transformOrigin:'top'}}/>
+        </div>
+
+        {/* background QUOTE */}
+        <div ref={n=>{if(n)el.current.bg=n}} style={{position:'absolute',top:'50%',left:'6vw',fontFamily:'Geist',fontSize:'clamp(120px,20vw,320px)',fontWeight:700,letterSpacing:'-.06em',lineHeight:.82,opacity:.03,whiteSpace:'nowrap',pointerEvents:'none',zIndex:0}}>
+          QUOTE
+        </div>
+
+        {/* ThreeBar — visible by default with explicit dimensions */}
+        <div style={{position:'absolute',top:0,left:0,bottom:0,width:'42vw',display:'flex',alignItems:'flex-end',gap:'clamp(16px,2.8vw,40px)',padding:'0 6vw 8vh',pointerEvents:'none',zIndex:2}}>
+          <div ref={n=>{if(n)el.current.tbWrap=n}} style={{display:'flex',gap:'clamp(16px,2.8vw,40px)',alignItems:'flex-end'}}>
+            {/* BAR 01 — explicit height, always visible */}
+            <div ref={n=>{if(n)el.current.bar0=n}} style={{
+              width:'clamp(48px,6vw,100px)',
+              height:'clamp(120px,25vh,280px)',
+              background:'#FFF',
+              transformOrigin:'bottom',
+            }}/>
+            {/* BAR 02 */}
+            <div ref={n=>{if(n)el.current.bar1=n}} style={{
+              width:'clamp(48px,6vw,100px)',
+              height:'clamp(160px,33vh,380px)',
+              background:'#FFF',
+              transformOrigin:'top',
+            }}/>
+            {/* BAR 03 */}
+            <div ref={n=>{if(n)el.current.bar2=n}} style={{
+              width:'clamp(48px,6vw,100px)',
+              height:'clamp(130px,27vh,300px)',
+              background:'#FFF',
+              transformOrigin:'bottom',
+            }}/>
+          </div>
+          <div ref={n=>{if(n)el.current.tbExtend=n}} style={{width:'clamp(48px,6vw,100px)',height:0,background:'#FFF'}}/>
+        </div>
+
+        {/* headline — visible by default, animation on wrapper */}
+        <div ref={n=>{if(n)el.current.collapse=n}} style={{position:'absolute',top:0,right:0,bottom:0,width:'56vw',display:'flex',flexDirection:'column',justifyContent:'center',padding:'0 6vw 0 4vw',zIndex:3,transformOrigin:'center'}}>
+
+          {/* metadata — visible by default */}
+          <div ref={n=>{if(n)el.current.meta=n}} style={{marginBottom:'clamp(12px,1.5vw,24px)'}}>
+            <K>Get a quote · reply within one business day</K>
+          </div>
+
+          {/* headline line 1 — visible by default */}
+          <div style={{overflow:'hidden'}}>
+            <h1 ref={n=>{if(n)el.current.hl=n}} style={{
+              margin:0,fontFamily:'Geist',fontSize:'clamp(52px,8.5vw,148px)',fontWeight:500,
+              letterSpacing:'-.045em',lineHeight:.88,
+            }}>LET'S MAKE YOUR</h1>
+          </div>
+
+          {/* headline line 2 — visible by default */}
+          <div style={{overflow:'hidden'}}>
+            <h1 ref={n=>{if(n)el.current.hl2=n}} style={{
+              margin:0,fontFamily:'Geist',fontSize:'clamp(52px,8.5vw,148px)',fontWeight:300,fontStyle:'italic',
+              letterSpacing:'-.045em',lineHeight:.88,
+            }}>AGENCY LOOK BRILLIANT.</h1>
+          </div>
+
+          {/* scroll cue — visible by default */}
+          <div style={{marginTop:'clamp(32px,4vh,64px)',display:'flex',alignItems:'center',gap:14}}>
+            <span style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.4}}>/01 · scroll</span>
+            <div style={{width:32,height:1,background:'rgba(255,255,255,.2)',position:'relative',overflow:'hidden'}}>
+              <div style={{position:'absolute',top:0,left:0,height:'100%',width:'100%',background:'#FFF',transformOrigin:'left'}}/>
+            </div>
+          </div>
+        </div>
+
+        {/* section index */}
+        <div style={{position:'absolute',top:'clamp(80px,10vh,120px)',right:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.2,zIndex:6,pointerEvents:'none',mixBlendMode:'difference'}}>
+          01 / QUOTE
+        </div>
+
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 02 HOW IT STARTS ═══ */
+const Process=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+
+  const steps=[
+    {n:'01',t:'YOU SEND THE NOTE',d:'Two sentences is plenty.'},
+    {n:'02',t:'WE REPLY IN A DAY',d:'With questions, not a pitch deck.'},
+    {n:'03',t:'PARTNERSHIP OUTLINE',d:'Shaped around how your shop runs.'},
+  ];
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=stickyProgress(rc,vh);
+      const e=el.current;
+      try{
+        const stepP=p*3;
+        const active=clamp01(Math.floor(stepP));
+        const stepLocal=clamp01(stepP-active);
+        for(let i=0;i<3;i++){
+          const isActive=i===active;
+          const isPast=i<active;
+          const sc=isActive?lerp(.85,1,stepLocal):(isPast?lerp(1,.85,1):.85);
+          const op=isActive?lerp(.3,1,stepLocal):(isPast?.15:0);
+          if(e[`wrap${i}`]){
+            e[`wrap${i}`].style.transform=`scale(${sc})`;
+            e[`wrap${i}`].style.opacity=op;
+            e[`wrap${i}`].style.zIndex=isActive?2:1;
+          }
+        }
+        const giantNums=['01','02','03'];
+        if(e.giantNum){
+          const revealP=isActive?clamp01(stepLocal*2):0;
+          e.giantNum.textContent=giantNums[active];
+          e.giantNum.style.clipPath=`inset(${(1-revealP)*100}% 0 0 0)`;
+        }
+        for(let i=0;i<3;i++){
+          if(e[`pb${i}`]){
+            const barP=i<active?1:(i===active?stepLocal:0);
+            e[`pb${i}`].style.transform=`scaleY(${barP})`;
+          }
+        }
+        if(e.transLine)e.transLine.style.transform=`scaleX(${range(p,.85,1)})`;
+      }catch(err){console.error('Process scroll error:',err)}
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();
+    window.addEventListener('scroll',on,{passive:true});
+    window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{height:'280vh',position:'relative',background:'#FFF',color:'#000'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center'}}>
+
+        {/* giant background number — visible by default */}
+        <div ref={n=>{if(n)el.current.giantNum=n}} style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',fontFamily:'Geist',fontSize:'clamp(100px,25vw,350px)',fontWeight:700,letterSpacing:'-.05em',opacity:.04,pointerEvents:'none',whiteSpace:'nowrap'}}>
+          01
+        </div>
+
+        <div style={{position:'absolute',top:'clamp(80px,10vh,120px)',left:32}}>
+          <K>02 / How it starts</K>
+        </div>
+
+        {/* ThreeBar progress — bars visible by default, animation applies scaleY */}
+        <div style={{position:'absolute',right:32,top:'50%',transform:'translateY(-50%)',display:'flex',gap:8,alignItems:'flex-end',height:120}}>
+          {[.66,1,.82].map((h,i)=>(
+            <div key={i} ref={n=>{if(n)el.current[`pb${i}`]=n}} style={{
+              width:8,background:'#000',transformOrigin:'bottom',
+              height:`${h*100}%`,
+            }}/>
+          ))}
+        </div>
+
+        {/* steps — step 01 visible by default, others hidden by animation */}
+        <div style={{position:'relative',width:'70vw',maxWidth:800,height:300,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          {steps.map(({n,t,d},i)=>(
+            <div key={n} ref={n2=>{if(n2)el.current[`wrap${i}`]=n2}} style={{
+              position:'absolute',inset:0,
+              display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+              textAlign:'center',
+              /* step 01 visible by default, others start hidden */
+              opacity:i===0?1:0,
+              zIndex:i===0?2:1,
+            }}>
+              <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.4,marginBottom:24}}>
+                STEP {n}
+              </div>
+              <div style={{fontFamily:'Geist',fontSize:'clamp(28px,4.5vw,56px)',fontWeight:500,letterSpacing:'-.03em',lineHeight:1,marginBottom:16}}>
+                {t}
+              </div>
+              <div style={{fontFamily:'Geist',fontSize:'clamp(14px,1.2vw,18px)',lineHeight:1.6,opacity:.6,maxWidth:400}}>
+                {d}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* transition line — visible by default */}
+        <div ref={n=>{if(n)el.current.transLine=n}} style={{position:'absolute',bottom:0,left:0,right:0,height:1,background:'#000',transformOrigin:'left'}}/>
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 03 FORM ═══ */
+const FormSection=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[focused,setFocused]=useState(null);
+
+  const services=['SEO','Content','Web build','Paid media','Email','Analytics','AI / Ops'];
+  const[picked,setPicked]=useState([]);
+  const[form,setForm]=useState({name:'',company:'',email:'',msg:''});
+  const[btnHov,setBtnHov]=useState(false);
+  const toggle=s=>setPicked(p=>p.includes(s)?p.filter(x=>x!==s):[...p,s]);
+
+  const submit=e=>{
+    e.preventDefault();
+    const body=encodeURIComponent(`Name: ${form.name}\nCompany: ${form.company}\nEmail: ${form.email}\nServices: ${picked.join(', ')||'--'}\n\nProject:\n${form.msg}`);
+    window.location.href=`mailto:partners@whitelabelresell.com?subject=${encodeURIComponent('Quote request -- '+(form.company||form.name))}&body=${body}`;
+  };
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=viewportProgress(rc,vh);
+      const e=el.current;
+      try{
+        if(e.leftRail){
+          e.leftRail.style.opacity=p;
+          e.leftRail.style.transform=`translateY(${lerp(-100,0,p)}px)`;
+        }
+        if(e.leftTB)e.leftTB.style.transform=`translateY(${lerp(-150,0,p)}px) scaleY(${p})`;
+        if(e.bgText){
+          e.bgText.style.transform=`translateX(${lerp(-40,0,p)}px)`;
+          e.bgText.style.opacity=p*.04;
+        }
+        if(e.formWrap){
+          const fp=range(p,.05,.25);
+          e.formWrap.style.opacity=fp;
+          e.formWrap.style.transform=`translateY(${lerp(120,0,fp)}px) scale(${lerp(.96,1,fp)})`;
+        }
+        ['f0','f1','f2','f3','f4','f5'].forEach((k,i)=>{
+          if(e[k]){
+            const threshold=.1+i*.05;
+            const tp=range(p,threshold,threshold+.08);
+            e[k].style.clipPath=`inset(0 0 ${(1-tp)*100}% 0)`;
+            e[k].style.opacity=tp;
+          }
+        });
+      }catch(err){console.error('Form scroll error:',err)}
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();
+    window.addEventListener('scroll',on,{passive:true});
+    window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  const fieldStyle=(isFocused)=>({
+    background:'transparent',border:'none',
+    borderBottom:isFocused?'2px solid #000':'1px solid #000',
+    borderRadius:0,padding:'14px 16px 12px',fontSize:15,color:'#000',fontFamily:'Geist',width:'100%',
+    transition:'border .3s ease',
+  });
+  const labelStyle=(isFocused)=>({
+    fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',
+    opacity:isFocused?1:.55,transform:isFocused?'translateY(2px)':'translateY(0)',
+    transition:'opacity .2s ease, transform .2s ease',marginBottom:8,display:'block',
+  });
+
+  return(
+    <section ref={sec} style={{background:'#FFF',color:'#000',borderTop:'1px solid #000',position:'relative',overflow:'hidden'}}>
+
+      {/* background REQUEST text — visible by default at low opacity */}
+      <div ref={n=>{if(n)el.current.bgText=n}} style={{position:'absolute',top:'50%',right:'-5vw',fontFamily:'Geist',fontSize:'clamp(80px,12vw,200px)',fontWeight:700,letterSpacing:'-.04em',whiteSpace:'nowrap',opacity:.04,pointerEvents:'none',color:'#000'}}>
+        REQUEST
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1.5fr',minHeight:'100vh',position:'relative',zIndex:1}}>
+
+        {/* LEFT RAIL — visible by default */}
+        <div ref={n=>{if(n)el.current.leftRail=n}} style={{borderRight:'1px solid #000',padding:'clamp(50px,6vw,90px) 6vw',display:'flex',flexDirection:'column',justifyContent:'space-between',position:'sticky',top:0,height:'100vh'}}>
+          <div>
+            <K>Get a quote</K>
+            <div style={{fontFamily:'Geist',fontSize:'clamp(36px,5vw,64px)',fontWeight:500,letterSpacing:'-.04em',lineHeight:.92,marginBottom:'clamp(24px,3vh,40px)'}}>
+              REPLY<br/>WITHIN<br/>ONE DAY.
+            </div>
+            <a href="mailto:partners@whitelabelresell.com" style={{fontFamily:'"Geist Mono",monospace',fontSize:12,letterSpacing:'.12em',opacity:.6,borderBottom:'1px solid rgba(0,0,0,.3)',paddingBottom:4,display:'inline-block'}}>
+              partners@whitelabelresell.com
+            </a>
+          </div>
+          <div ref={n=>{if(n)el.current.leftTB=n}} style={{display:'flex',gap:6,alignItems:'flex-end',height:100}}>
+            {[.66,1,.82].map((h,i)=><span key={i} style={{width:8,height:`${h*100}%`,background:'#000'}}/>)}
+          </div>
+        </div>
+
+        {/* FORM — visible by default */}
+        <div ref={n=>{if(n)el.current.formWrap=n}} style={{padding:'clamp(50px,6vw,90px) 6vw'}}>
+          <form onSubmit={submit} style={{display:'flex',flexDirection:'column',gap:28}}>
+
+            <div ref={n=>{if(n)el.current.f0=n}} className="form-row" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:22}}>
+              <label style={{display:'flex',flexDirection:'column'}}>
+                <span style={labelStyle(focused==='name')}>Your name</span>
+                <input required autoComplete="name" value={form.name}
+                  onFocus={()=>setFocused('name')} onBlur={()=>setFocused(null)}
+                  onChange={e=>setForm({...form,name:e.target.value})}
+                  style={fieldStyle(focused==='name')}/>
+              </label>
+              <label style={{display:'flex',flexDirection:'column'}}>
+                <span style={labelStyle(focused==='company')}>Company / agency</span>
+                <input autoComplete="organization" value={form.company}
+                  onFocus={()=>setFocused('company')} onBlur={()=>setFocused(null)}
+                  onChange={e=>setForm({...form,company:e.target.value})}
+                  style={fieldStyle(focused==='company')}/>
+              </label>
+            </div>
+
+            <div ref={n=>{if(n)el.current.f1=n}}>
+              <label style={{display:'flex',flexDirection:'column'}}>
+                <span style={labelStyle(focused==='email')}>Email</span>
+                <input required type="email" autoComplete="email" value={form.email}
+                  onFocus={()=>setFocused('email')} onBlur={()=>setFocused(null)}
+                  onChange={e=>setForm({...form,email:e.target.value})}
+                  style={fieldStyle(focused==='email')}/>
+              </label>
+            </div>
+
+            <div ref={n=>{if(n)el.current.f2=n}}>
+              <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.55,marginBottom:12}}>
+                What do you need? · pick any
+              </div>
+              <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                {services.map(s=>{
+                  const on=picked.includes(s);
+                  return(
+                    <button key={s} type="button" onClick={()=>toggle(s)} style={{
+                      padding:'10px 18px',
+                      background:on?'#000':'transparent',
+                      color:on?'#FFF':'#000',
+                      border:'1px solid #000',borderRadius:0,
+                      fontFamily:'"Geist Mono",monospace',fontSize:11,
+                      letterSpacing:'.16em',textTransform:'uppercase',
+                      cursor:'pointer',transition:'all .25s ease',
+                    }}>
+                      <span style={{display:'flex',alignItems:'center',gap:8}}>
+                        <span style={{display:'inline-block',width:8,height:8,border:'1px solid '+(on?'#FFF':'#000'),background:on?'#FFF':'transparent',transition:'all .2s ease'}}/>
+                        {s}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div ref={n=>{if(n)el.current.f3=n}}>
+              <label style={{display:'flex',flexDirection:'column'}}>
+                <span style={labelStyle(focused==='msg')}>Tell us about the project</span>
+                <textarea rows={5} value={form.msg}
+                  onFocus={()=>setFocused('msg')} onBlur={()=>setFocused(null)}
+                  onChange={e=>setForm({...form,msg:e.target.value})}
+                  style={{...fieldStyle(focused==='msg'),resize:'vertical',minHeight:120}}/>
+              </label>
+            </div>
+
+            <div ref={n=>{if(n)el.current.f4=n}}>
+              <button type="submit"
+                onMouseEnter={()=>setBtnHov(true)} onMouseLeave={()=>setBtnHov(false)}
+                style={{
+                  padding:'18px 32px',background:'#000',color:'#FFF',
+                  border:'none',borderRadius:0,
+                  fontFamily:'"Geist Mono",monospace',fontSize:12,
+                  letterSpacing:'.22em',textTransform:'uppercase',
+                  fontWeight:600,cursor:'pointer',
+                  display:'inline-flex',alignItems:'center',gap:12,
+                  transition:'all .3s ease',
+                  transform:btnHov?'translateX(4px)':'translateX(0)',
+                }}>
+                <TB size={12} color="#FFF"/>
+                SEND THE REQUEST →
+              </button>
+            </div>
+
+          </form>
+
+          <div ref={n=>{if(n)el.current.f5=n}} style={{marginTop:40,paddingTop:24,borderTop:'1px solid rgba(0,0,0,.12)',fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.2em',textTransform:'uppercase',opacity:.6,display:'flex',gap:24,flexWrap:'wrap'}}>
+            <span>prefer email? partners@whitelabelresell.com</span>
+            <span>· discord for active partners</span>
+          </div>
+        </div>
+      </div>
+
+      <style>{`@media(max-width:768px){.form-row{grid-template-columns:1fr!important}}`}</style>
+    </section>
+  );
+};
+
+/* ═══ 04 CLOSING ═══ */
+const Closing=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[hover,setHover]=useState(false);
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=viewportProgress(rc,vh);
+      const e=el.current;
+      try{
+        if(e.hl){e.hl.style.opacity=p;e.hl.style.transform=`translateY(${lerp(40,0,p)}px)`;}
+        if(e.email){e.email.style.clipPath=`inset(0 ${(1-p)*100}% 0 0)`;e.email.style.opacity=p;}
+        if(e.emailWrap)e.emailWrap.style.transform=`translateX(${lerp(-50,50,p)}px)`;
+        if(e.bgTb)e.bgTb.style.transform=`translateY(-50%) scale(${lerp(.8,1,p)})`;
+        if(e.line)e.line.style.transform=`scaleX(${p})`;
+        if(e.discord)e.discord.style.opacity=lerp(0,.5,p);
+      }catch(err){console.error('Closing scroll error:',err)}
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();
+    window.addEventListener('scroll',on,{passive:true});
+    window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{minHeight:'100vh',background:'#000',color:'#FFF',position:'relative',overflow:'hidden',borderTop:'1px solid #FFF',display:'flex',flexDirection:'column',justifyContent:'center',padding:'clamp(80px,12vh,140px) 6vw'}}>
+
+      {/* Large background ThreeBar — atmospheric, not competing */}
+      <div ref={n=>{if(n)el.current.bgTb=n}} style={{
+        position:'absolute',right:'6vw',top:'50%',transform:'translateY(-50%)',
+        display:'flex',gap:'clamp(12px,2vw,24px)',alignItems:'flex-end',
+        height:'clamp(200px,40vh,400px)',
+        opacity:.06,
+      }}>
+        {[.66,1,.82].map((h,i)=><span key={i} style={{width:'clamp(16px,2vw,32px)',height:`${h*100}%`,background:'#FFF'}}/>)}
+      </div>
+
+      <div ref={n=>{if(n)el.current.hl=n}} style={{marginBottom:'clamp(48px,6vh,80px)',position:'relative',zIndex:1}}>
+        <K>PREFER EMAIL?</K>
+        <div style={{fontFamily:'Geist',fontSize:'clamp(16px,1.5vw,20px)',fontWeight:300,opacity:.4,marginTop:12}}>
+          We reply within one business day.
+        </div>
+      </div>
+
+      <div ref={n=>{if(n)el.current.emailWrap=n}} style={{position:'relative',zIndex:1}}>
+        <div ref={n=>{if(n)el.current.email=n}}>
+          <a href="mailto:partners@whitelabelresell.com"
+            onMouseEnter={()=>setHover(true)} onMouseLeave={()=>setHover(false)}
+            style={{
+              fontFamily:'Geist',fontSize:'clamp(40px,7vw,112px)',fontWeight:500,
+              letterSpacing:'-.04em',lineHeight:.92,
+              borderBottom:hover?'3px solid #FFF':'3px solid rgba(255,255,255,.2)',
+              paddingBottom:12,
+              display:'inline-block',
+              transition:'border-color .3s ease',
+            }}>
+            partners@<br/>whitelabelresell.com
+          </a>
+        </div>
+      </div>
+
+      <div style={{display:'flex',alignItems:'center',gap:'clamp(16px,2vw,32px)',marginTop:'clamp(48px,6vh,80px)',position:'relative',zIndex:1}}>
+        <div ref={n=>{if(n)el.current.line=n}} style={{flex:1,height:1,background:'rgba(255,255,255,.15)',transformOrigin:'left'}}/>
+        <div ref={n=>{if(n)el.current.discord=n}} style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.4,whiteSpace:'nowrap'}}>
+          DISCORD FOR ACTIVE PARTNERS
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ═══ FOOTER ═══ */
+const Footer=()=>(
+  <footer style={{background:'#000',color:'#FFF',borderTop:'1px solid #FFF',padding:'44px 6vw 32px'}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:28}}>
+      <div>
+        <TB size={20} color="#FFF" gap={3}/>
+        <div style={{marginTop:14,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5}}>© 2026 White Label Resell · est. 2018</div>
+      </div>
+      <div style={{display:'flex',gap:22,flexWrap:'wrap',fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase'}}>
+        <a href="index.html" style={{opacity:.8}}>Home</a>
+        <a href="case-studies.html" style={{opacity:.8}}>Work</a>
+        <a href="about.html" style={{opacity:.8}}>About</a>
+        <a href="team.html" style={{opacity:.8}}>Team</a>
+        <a href="contact.html" style={{opacity:.8}}>Get a Quote</a>
+        <a href="mailto:partners@whitelabelresell.com" style={{opacity:.8}}>partners@whitelabelresell.com</a>
+      </div>
+    </div>
+  </footer>
+);
+
+/* ═══ APP ═══ */
+const App=()=>(
+  <React.Fragment>
+    <HUD/>
+    <ScrollPct/>
+    <Hero/>
+    <Process/>
+    <FormSection/>
+    <Closing/>
+    <Footer/>
+  </React.Fragment>
+);
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

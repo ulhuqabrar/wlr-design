@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Case Studies — White Label Resell</title>
+<meta name="description" content="Real results from real partnerships. See how White Label Resell helps agencies scale with white-label SEO, content, web and analytics." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:clip}
+html,body{background:#000;color:#FFF}
+body{font-family:'Geist',ui-sans-serif,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:clip}
+body::-webkit-scrollbar{width:0}
+::selection{background:#FFF;color:#000}
+a{color:inherit;text-decoration:none}
+a:focus-visible{outline:2px solid #FFF;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="lib/react.production.min.js"></script>
+<script src="lib/react-dom.production.min.js"></script>
+<script src="lib/babel.min.js"></script>
+<script type="text/babel">
+const {useState,useEffect,useRef}=React;
+
+/* ═══ HELPERS ═══ */
+const clamp01=v=>Math.max(0,Math.min(1,v));
+const range=(p,start,end)=>clamp01((p-start)/(end-start));
+const lerp=(a,b,t)=>a+(b-a)*t;
+const stickyProgress=(rect,vh)=>{const sp=rect.height-vh;return sp>0?clamp01(-rect.top/sp):0};
+const viewportProgress=(rect,vh)=>{const trigger=vh*.85,end=vh*.15;return clamp01((trigger-rect.top)/(trigger-end))};
+const EASE='cubic-bezier(.16,1,.3,1)';
+
+const useReducedMotion=()=>{
+  const[r,setR]=useState(()=>window.matchMedia('(prefers-reduced-motion:reduce)').matches);
+  useEffect(()=>{const mq=window.matchMedia('(prefers-reduced-motion:reduce)');setR(mq.matches);const h=e=>setR(e.matches);mq.addEventListener('change',h);return()=>mq.removeEventListener('change',h)},[]);
+  return r;
+};
+
+const TB=({size=16,color='currentColor',gap=2})=>(
+  <span style={{display:'inline-flex',alignItems:'flex-end',gap,height:size}}>
+    {[.66,1,.82].map((h,i)=><span key={i} style={{width:size*.22,height:`${h*100}%`,background:color}}/>)}
+  </span>
+);
+const K=({children,s={}})=>(
+  <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginBottom:16,...s}}>{children}</div>
+);
+
+/* ═══ NAV ═══ */
+const NL=({label,href,active,mobile})=>{
+  const[h,setH]=useState(false);
+  return(
+    <a href={href} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
+      style={{color:'#FFF',position:'relative',paddingBottom:mobile?0:2,display:'block',padding:mobile?'16px 0':'0 0 2px 0'}}>
+      <span style={{position:'relative',zIndex:1,fontSize:mobile?28:11,letterSpacing:mobile?'.08em':'.22em'}}>{label}</span>
+      {!mobile&&<span style={{position:'absolute',bottom:0,left:0,width:'100%',height:1,background:'#FFF',transformOrigin:'left',transform:(h||active)?'scaleX(1)':'scaleX(0)',transition:'transform .3s cubic-bezier(.2,.8,.2,1)'}}/>}
+    </a>
+  );
+};
+const HUD=()=>{
+  const[mobOpen,setMobOpen]=useState(false);
+  useEffect(()=>{if(mobOpen)document.body.style.overflow='hidden';else document.body.style.overflow='';return()=>{document.body.style.overflow=''}},[mobOpen]);
+  return(
+    <React.Fragment>
+      <nav style={{position:'fixed',top:0,left:0,right:0,zIndex:100,mixBlendMode:'difference',pointerEvents:'none',padding:'20px 32px',display:'flex',justifyContent:'space-between',alignItems:'center',color:'#FFF',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase'}}>
+        <a href="index.html" style={{pointerEvents:'auto',display:'inline-flex',alignItems:'center',gap:12,color:'#FFF'}}>
+          <TB size={14} color="#FFF" gap={3}/><span className="hide-mobile">White Label Resell</span>
+        </a>
+        <span className="nav-desktop" style={{pointerEvents:'auto',display:'flex',gap:28}}>
+          <NL label="Home" href="index.html"/><NL label="Work" href="case-studies.html" active/><NL label="About" href="about.html"/><NL label="Team" href="team.html"/><NL label="Get a Quote" href="contact.html"/>
+        </span>
+        <button className="nav-mob-toggle" onClick={()=>setMobOpen(o=>!o)} style={{pointerEvents:'auto',background:'none',border:'none',color:'#FFF',fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',cursor:'pointer',display:'none',padding:0}}>
+          {mobOpen?'CLOSE':'MENU'}
+        </button>
+      </nav>
+      {mobOpen&&<div className="nav-mob-overlay" style={{position:'fixed',inset:0,zIndex:99,background:'#000',display:'flex',flexDirection:'column',justifyContent:'center',padding:'80px 48px'}}>
+        <NL label="Home" href="index.html" mobile/><NL label="Work" href="case-studies.html" mobile active/><NL label="About" href="about.html" mobile/><NL label="Team" href="team.html" mobile/><NL label="Get a Quote" href="contact.html" mobile/>
+      </div>}
+      <style>{`.hide-mobile{display:inline}.nav-mob-toggle{display:none!important}.nav-desktop{display:flex!important}@media(max-width:768px){.hide-mobile{display:none}.nav-mob-toggle{display:block!important}.nav-desktop{display:none!important}}`}</style>
+    </React.Fragment>
+  );
+};
+
+/* ═══ SCROLL PERCENTAGE ═══ */
+const ScrollPct=()=>{
+  const ref=useRef(null);
+  useEffect(()=>{
+    let r=0,tr=0;
+    const u=()=>{r=0;const h=document.documentElement.scrollHeight-window.innerHeight;const p=h>0?clamp01(window.scrollY/h):0;if(ref.current)ref.current.textContent=String(Math.round(p*100)).padStart(2,'0')+'%'};
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    window.addEventListener('scroll',on,{passive:true});
+    return()=>{window.removeEventListener('scroll',on);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[]);
+  return <div ref={ref} style={{position:'fixed',bottom:28,right:32,zIndex:100,mixBlendMode:'difference',fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3,pointerEvents:'none',color:'#FFF'}}>00%</div>;
+};
+
+/* ═══ NUMBER COUNTER ═══ */
+const useCountUp=(target,duration=2000,active=false)=>{
+  const[val,setVal]=useState(0);
+  useEffect(()=>{
+    if(!active)return;
+    let raf;
+    const start=performance.now();
+    const animate=(now)=>{
+      const elapsed=now-start;
+      const progress=Math.min(elapsed/duration,1);
+      const eased=1-Math.pow(1-progress,3);
+      setVal(Math.round(target*eased));
+      if(progress<1)raf=requestAnimationFrame(animate);
+    };
+    raf=requestAnimationFrame(animate);
+    return()=>cancelAnimationFrame(raf);
+  },[active,target,duration]);
+  return val;
+};
+
+/* ═══ CASE DATA ═══ */
+const CASES=[
+  {
+    id:'01',name:'GUILD GOLF CARTS',services:'SEO + PPC + GMB + WORDPRESS',year:'2024 → PRESENT',
+    category:'RETAIL · FIVE LOCATIONS',
+    start:66,end:444,multiplier:'6.7×',
+    timeline:['JAN 2024','SYSTEM BUILD','GROWTH','JUN 2025','444 LEADS'],
+    systems:['TECHNICAL SEO','CONTENT PRODUCTION','PAID SEARCH','GMB OPERATIONS','WORDPRESS REBUILD','CALLRAIL TRACKING'],
+    challenge:'A five-location golf cart dealer with strong showrooms and almost no digital footprint — 66 leads a month at the start of 2024.',
+    approach:'Full WordPress rebuild, geo-targeted paid search across five cities, an 80+/mo local citation engine, GMB operations, and CallRail tracking on every line.',
+    result:'A 6.7× lift to the all-time peak of 444 leads in June 2025. Portland GMB doubled year over year. Now expanding into a custom operations CRM and AI voice agent.',
+    data:[66,147,140,156,193,210,227,198,213,193,133,138,197,215,315,337,367,444,427,395,320,254,203,149,202,224,274],
+  },
+  {
+    id:'02',name:'UNEMPLOYMENT SOCIETY',services:'CONTENT + SCHEMA + ANALYTICS',year:'2026',
+    category:'EDUCATION · CAREER TRANSITIONS',
+    headline:'A search destination, not a website.',
+    description:'A 12-month program to catch people at the hardest moment of their careers and route them into Pepelwerk. We built the analytics spine, the schema, and an AI-driven editorial flywheel that publishes at volume without losing voice.',
+    systems:['WIX → WORDPRESS MIGRATION','SCAI CONTENT ENGINE','SCHEMA + ANALYTICS SPINE','PEPELWERK HANDOFF'],
+    systemValues:[1.0,0.72,0.5,0.26],
+  },
+  {
+    id:'03',name:'FLAT BID MOVING',services:'PPC + WEB DESIGN',year:'2024',
+    category:'MOVING · SAN DIEGO',
+    headline:'A premium rebuild for a premium mover.',
+    description:'Complete website redesign built around the customization story that separates Flat Bid from commodity movers — then a disciplined paid + organic system on top.',
+    metrics:[['1,000','SEO ARTICLES'],['60','DAY REDESIGN']],
+    exclusivity:10,
+    exclusivityLabel:'PPC AD GROUPS · SAN DIEGO ONLY',
+    territory:'We don\'t run paid search for any other mover in San Diego county. Flat Bid owns the market with us.',
+  },
+];
+
+/* ═══ 01 HERO ═══ */
+const Hero=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[phase,setPhase]=useState(red?7:0);
+  const[glitch,setGlitch]=useState(false);
+
+  useEffect(()=>{
+    if(red){setPhase(7);return}
+    const timers=[
+      setTimeout(()=>setPhase(1),0),
+      setTimeout(()=>setPhase(2),150),
+      setTimeout(()=>setPhase(3),350),
+      setTimeout(()=>setPhase(4),550),
+      setTimeout(()=>setPhase(5),800),
+      setTimeout(()=>setPhase(6),1100),
+      setTimeout(()=>setPhase(7),1400),
+      setTimeout(()=>setGlitch(true),1600),
+      setTimeout(()=>setGlitch(false),1800),
+    ];
+    return()=>timers.forEach(clearTimeout);
+  },[red]);
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=stickyProgress(rc,vh);
+      const e=el.current;
+      try{
+        if(e.hl)e.hl.style.transform=`translateY(${lerp(0,-60,p)}px)`;
+        if(e.hl2)e.hl2.style.transform=`translateY(${lerp(0,-40,p)}px)`;
+        if(e.tbWrap)e.tbWrap.style.transform=`translateY(${lerp(0,-80,p)}px) rotate(${lerp(0,2,p)}deg)`;
+        if(e.bg)e.bg.style.transform=`translateY(calc(-50% + ${lerp(0,60,p)}px)) scale(${lerp(1,1.1,p)})`;
+        if(e.meta)e.meta.style.transform=`translateY(${lerp(0,15,p)}px)`;
+        if(e.rule2)e.rule2.style.transform=`scaleX(${lerp(0,1,range(p,.1,.3))})`;
+      }catch(err){}
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{height:'200vh',position:'relative',background:'#000',color:'#FFF'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex',alignItems:'center'}}>
+
+        {/* vertical rule — pulse */}
+        <div style={{position:'absolute',top:0,left:0,right:0,height:1,background:'rgba(255,255,255,.08)',zIndex:1}}>
+          <div style={{height:'100%',background:'rgba(255,255,255,.3)',transformOrigin:'left',transform:phase>=2?'scaleX(1)':'scaleX(0)',transition:`transform .8s ${EASE}`}}/>
+        </div>
+
+        {/* horizontal rule — draw */}
+        <div style={{position:'absolute',top:'50%',left:0,right:0,height:1,background:'rgba(255,255,255,.04)',zIndex:1}}>
+          <div ref={n=>{if(n)el.current.rule2=n}} style={{height:'100%',background:'rgba(255,255,255,.15)',transformOrigin:'left',transform:'scaleX(0)'}}/>
+        </div>
+
+        {/* background word — parallax */}
+        <div ref={n=>{if(n)el.current.bg=n}} style={{position:'absolute',top:'50%',left:'50%',transform:'translate(-50%,-50%)',fontFamily:'Geist',fontSize:'clamp(100px,20vw,360px)',fontWeight:700,letterSpacing:'-.06em',lineHeight:.82,opacity:phase>=1?.03:0,whiteSpace:'nowrap',pointerEvents:'none',zIndex:0,transition:'opacity 1s ease'}}>
+          PROOF
+        </div>
+
+        {/* ThreeBar — assemble with bounce */}
+        <div style={{position:'absolute',right:'8vw',top:'50%',transform:'translateY(-50%)',zIndex:2}}>
+          <div ref={n=>{if(n)el.current.tbWrap=n}} style={{display:'flex',gap:'clamp(12px,2vw,28px)',alignItems:'flex-end',height:'clamp(120px,30vh,280px)'}}>
+            {[0,1,2].map(i=>{
+              const h=[.66,1,.82][i];
+              const enters=['120%','-120%','120%'];
+              return(
+                <div key={i} style={{
+                  width:'clamp(16px,2.5vw,36px)',
+                  height:`${h*100}%`,
+                  background:'#FFF',
+                  transformOrigin:i===1?'top':'bottom',
+                  transform:phase>=4?'translateY(0)':'translateY('+enters[i]+')',
+                  transition:`transform .8s cubic-bezier(.34,1.56,.64,1) ${i*120+400}ms`,
+                }}/>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* headline — clip-path reveal with stagger */}
+        <div style={{position:'absolute',left:'6vw',top:'50%',transform:'translateY(-50%)',zIndex:3,maxWidth:'55vw'}}>
+          <div ref={n=>{if(n)el.current.meta=n}} style={{marginBottom:'clamp(16px,2vh,32px)',opacity:phase>=7?1:0,transform:phase>=7?'translateY(0)':'translateY(10px)',transition:'all .6s ease'}}>
+            <K>Case studies · three engagements, real numbers</K>
+          </div>
+          <div style={{overflow:'hidden'}}>
+            <h1 ref={n=>{if(n)el.current.hl=n}} style={{margin:0,fontFamily:'Geist',fontSize:'clamp(56px,9vw,160px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.88,clipPath:phase>=6?'inset(0 0 0% 0)':'inset(0 0 100% 0)',transition:`clip-path .8s ${EASE}`}}>
+              QUIET WORK.
+            </h1>
+          </div>
+          <div style={{overflow:'hidden',marginTop:'clamp(4px,1vh,12px)'}}>
+            <h1 ref={n=>{if(n)el.current.hl2=n}} style={{margin:0,fontFamily:'Geist',fontSize:'clamp(56px,9vw,160px)',fontWeight:300,fontStyle:'italic',letterSpacing:'-.05em',lineHeight:.88,clipPath:phase>=6?'inset(0 0 0% 0)':'inset(0 0 100% 0)',transition:`clip-path .8s ${EASE} .15s`}}>
+              LOUD RESULTS.
+            </h1>
+          </div>
+          {/* glitch accent */}
+          {glitch&&(
+            <div style={{position:'absolute',top:0,left:0,right:0,bottom:0,pointerEvents:'none',mixBlendMode:'difference'}}>
+              <div style={{position:'absolute',top:'20%',left:'10%',width:'80%',height:2,background:'#FFF',opacity:.3,animation:'glitchLine .2s ease forwards'}}/>
+            </div>
+          )}
+        </div>
+
+        {/* section index */}
+        <div style={{position:'absolute',top:'clamp(80px,10vh,120px)',right:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:phase>=7?.2:0,transition:'opacity .5s ease',zIndex:6,pointerEvents:'none'}}>
+          01 / WORK
+        </div>
+
+        {/* scroll cue */}
+        <div style={{position:'absolute',bottom:28,left:32,display:'flex',alignItems:'center',gap:14,zIndex:6}}>
+          <span style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:phase>=7?.4:0,transition:'opacity .5s ease .3s'}}>/01 · scroll</span>
+          <div style={{width:32,height:1,background:'rgba(255,255,255,.2)',position:'relative',overflow:'hidden'}}>
+            <div style={{position:'absolute',top:0,left:0,height:'100%',width:'100%',background:'#FFF',transformOrigin:'left',transform:phase>=7?'scaleX(1)':'scaleX(0)',transition:`transform 1.2s ${EASE}`}}/>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes glitchLine{0%{transform:translateX(0);opacity:.3}50%{transform:translateX(5px);opacity:.6}100%{transform:translateX(-2px);opacity:0}}
+      `}</style>
+    </section>
+  );
+};
+
+/* ═══ 02 CASE INDEX ═══ */
+const CaseIndex=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const[hovered,setHovered]=useState(null);
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=viewportProgress(rc,vh);
+      const e=s;
+      try{
+        const rows=e.querySelectorAll('.case-row');
+        rows.forEach((row,i)=>{
+          const rowP=range(p,i*.25,(i+.3)*.25);
+          row.style.opacity=rowP;
+          row.style.transform=`translateY(${lerp(30,0,rowP)}px)`;
+        });
+      }catch(err){}
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{background:'#000',color:'#FFF',padding:'clamp(80px,12vh,140px) 6vw',borderTop:'1px solid #FFF',position:'relative'}}>
+      <K>02 / Case index</K>
+      <div style={{display:'flex',flexDirection:'column',gap:0}}>
+        {CASES.map((c,i)=>{
+          const isHovered=hovered===i;
+          return(
+            <a key={c.id} href={`#case-${c.id}`}
+              className="case-row"
+              onMouseEnter={()=>setHovered(i)} onMouseLeave={()=>setHovered(null)}
+              style={{
+                display:'grid',gridTemplateColumns:'80px 1fr auto',alignItems:'center',gap:'clamp(16px,3vw,48px)',
+                padding:'clamp(24px,4vh,48px) 0',
+                borderBottom:i<2?'1px solid rgba(255,255,255,.12)':'none',
+                cursor:'pointer',textDecoration:'none',color:'#FFF',
+                opacity:0,transition:'opacity .5s ease, transform .5s ease',
+              }}>
+              <div style={{fontFamily:'Geist',fontSize:'clamp(48px,7vw,100px)',fontWeight:700,letterSpacing:'-.05em',lineHeight:.85,opacity:isHovered?.15:.06,transition:'opacity .4s ease'}}>
+                {c.id}
+              </div>
+              <div>
+                <div style={{fontFamily:'Geist',fontSize:'clamp(28px,4vw,56px)',fontWeight:500,letterSpacing:'-.03em',lineHeight:.95,transform:isHovered?'translateX(12px)':'translateX(0)',transition:'transform .4s ease'}}>
+                  {c.name}
+                </div>
+                {isHovered&&(
+                  <div style={{marginTop:8,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,display:'flex',gap:12,flexWrap:'wrap'}}>
+                    {c.services.split(' + ').map(s=><span key={s}>{s}</span>)}
+                  </div>
+                )}
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <div style={{display:'flex',gap:3,alignItems:'flex-end',height:32,opacity:isHovered?1:.3,transition:'opacity .4s ease'}}>
+                  {[.66,1,.82].map((h,j)=><span key={j} style={{width:4,height:`${h*100}%`,background:'#FFF',transform:isHovered?'scaleY(1.3)':'scaleY(1)',transition:'transform .4s ease'}}/>)}
+                </div>
+                <span style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:isHovered?.8:.3,transition:'opacity .4s ease'}}>→</span>
+              </div>
+            </a>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
+
+/* ═══ CASE FILM — SHARED ═══ */
+const CaseFilm=({caseData:index,children})=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const c=CASES[index];
+
+  return(
+    <section id={`case-${c.id}`} ref={sec} style={{position:'relative'}}>
+      {children}
+    </section>
+  );
+};
+
+/* ═══ 03 CASE FILM 01 — GUILD ═══ */
+const CaseGuild=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[phase,setPhase]=useState(red?4:0);
+
+  const c=CASES[0];
+  const max=460;
+  const peakIdx=c.data.indexOf(444);
+  const startCount=useCountUp(c.start,1800,phase>=1);
+  const endCount=useCountUp(c.end,2200,phase>=3);
+  const multCount=useCountUp(670,2000,phase>=3);
+
+  useEffect(()=>{
+    if(red){setPhase(4);return}
+    const timers=[
+      setTimeout(()=>setPhase(1),0),
+      setTimeout(()=>setPhase(2),800),
+      setTimeout(()=>setPhase(3),1800),
+      setTimeout(()=>setPhase(4),2800),
+    ];
+    return()=>timers.forEach(clearTimeout);
+  },[red]);
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=stickyProgress(rc,vh);
+      const e=el.current;
+      try{
+        if(e.identity)e.identity.style.transform=`translateY(${lerp(0,-40,p)}px)`;
+        if(e.content)e.content.style.opacity=1-range(p,.7,1)*.6;
+      }catch(err){}
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{height:'280vh',position:'relative',background:'#FFF',color:'#000',borderTop:'1px solid #000'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex'}}>
+
+        {/* left — fixed identity */}
+        <div ref={n=>{if(n)el.current.identity=n}} style={{width:'35vw',borderRight:'1px solid #000',padding:'clamp(40px,5vw,80px)',display:'flex',flexDirection:'column',justifyContent:'space-between'}}>
+          <div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.4,marginBottom:24}}>CASE {c.id}</div>
+            <div style={{fontFamily:'Geist',fontSize:'clamp(32px,4vw,56px)',fontWeight:500,letterSpacing:'-.03em',lineHeight:.95,marginBottom:16}}>
+              {c.name}
+            </div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,lineHeight:1.8}}>
+              {c.category}<br/>{c.services}<br/>{c.year}
+            </div>
+          </div>
+          <div style={{display:'flex',gap:6,alignItems:'flex-end',height:48}}>
+            {[.66,1,.82].map((h,i)=><span key={i} style={{width:6,height:`${h*100}%`,background:'#000'}}/>)}
+          </div>
+        </div>
+
+        {/* right — storytelling */}
+        <div ref={n=>{if(n)el.current.content=n}} style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center',padding:'clamp(40px,5vw,80px)',position:'relative',overflow:'hidden'}}>
+
+          {/* Phase 01 — THE START */}
+          <div style={{opacity:phase>=1?1:0,transform:phase>=1?'translateY(0)':'translateY(40px)',transition:'all .8s ease',marginBottom:'clamp(40px,6vh,80px)'}}>
+            <K>01 / The start</K>
+            <div style={{fontFamily:'Geist',fontSize:'clamp(72px,12vw,180px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.85}}>
+              {startCount}
+            </div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:12,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginTop:8}}>monthly leads · jan 2024</div>
+          </div>
+
+          {/* Phase 02 — THE SYSTEM */}
+          <div style={{opacity:phase>=2?1:0,transform:phase>=2?'translateY(0)':'translateY(40px)',transition:'all .8s ease .2s',marginBottom:'clamp(40px,6vh,80px)'}}>
+            <K>02 / The system</K>
+            <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+              {c.systems.map((s,i)=>(
+                <div key={s} style={{
+                  padding:'10px 16px',border:'1px solid #000',
+                  fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.18em',textTransform:'uppercase',
+                  opacity:phase>=2?1:0,transform:phase>=2?'translateY(0)':'translateY(10px)',
+                  transition:`all .5s ease ${i*100}ms`,
+                }}>{s}</div>
+              ))}
+            </div>
+          </div>
+
+          {/* Phase 03 — THE RESULT */}
+          <div style={{opacity:phase>=3?1:0,transform:phase>=3?'translateY(0)':'translateY(40px)',transition:'all .8s ease .4s'}}>
+            <K>03 / The result</K>
+            <div style={{fontFamily:'Geist',fontSize:'clamp(72px,12vw,180px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.85}}>
+              {endCount}
+            </div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:12,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5,marginTop:8}}>monthly leads · jun 2025</div>
+            <div style={{fontFamily:'Geist',fontSize:'clamp(24px,3vw,40px)',fontWeight:300,letterSpacing:'-.03em',marginTop:16,opacity:.6}}>
+              {multCount/100}× growth
+            </div>
+          </div>
+
+          {/* timeline */}
+          <div style={{position:'absolute',bottom:'clamp(40px,5vh,80px)',left:'clamp(40px,5vw,80px)',right:'clamp(40px,5vw,80px)'}}>
+            <div style={{height:1,background:'rgba(0,0,0,.12)',position:'relative',marginBottom:24}}>
+              <div style={{height:'100%',background:'#000',transformOrigin:'left',transform:`scaleX(${clamp01(phase/4)})`,transition:'transform 1.5s ease'}}/>
+              {c.timeline.map((t,i)=>(
+                <div key={t} style={{position:'absolute',left:`${(i/(c.timeline.length-1))*100}%`,top:-6,fontFamily:'"Geist Mono",monospace',fontSize:9,letterSpacing:'.15em',textTransform:'uppercase',opacity:phase>=i+1?.6:.2,transition:'opacity .5s ease',whiteSpace:'nowrap',transform:'translateX(-50%)'}}>
+                  {t}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 04 CASE FILM 02 — UNEMPLOYMENT ═══ */
+const CaseUnem=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[phase,setPhase]=useState(red?5:0);
+  const barRefs=useRef([]);
+
+  const c=CASES[1];
+
+  useEffect(()=>{
+    if(red){setPhase(5);return}
+    const timers=[
+      setTimeout(()=>setPhase(1),0),
+      setTimeout(()=>setPhase(2),400),
+      setTimeout(()=>setPhase(3),700),
+      setTimeout(()=>setPhase(4),1000),
+      setTimeout(()=>setPhase(5),1400),
+    ];
+    return()=>timers.forEach(clearTimeout);
+  },[red]);
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=stickyProgress(rc,vh);
+      const e=el.current;
+      try{
+        if(e.identity)e.identity.style.transform=`translateY(${lerp(0,-40,p)}px)`;
+        if(e.content)e.content.style.opacity=1-range(p,.7,1)*.6;
+        if(e.headlineWords){
+          const words=e.headlineWords.querySelectorAll('.hl-word');
+          words.forEach((w,i)=>{
+            const wordP=range(p,.05+i*.02,.15+i*.02);
+            w.style.transform=`translateY(${lerp(40,0,wordP)}px)`;
+            w.style.opacity=wordP;
+          });
+        }
+        if(e.descChars){
+          const chars=e.descChars.querySelectorAll('.desc-char');
+          chars.forEach((ch,i)=>{
+            const charP=range(p,.4+i*.002,.5+i*.002);
+            ch.style.opacity=charP;
+          });
+        }
+      }catch(err){}
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  const headlineWords=['A','search','destination,','not','a','website.'];
+
+  return(
+    <section ref={sec} style={{height:'280vh',position:'relative',background:'#000',color:'#FFF',borderTop:'1px solid #FFF'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex'}}>
+
+        {/* left — fixed identity */}
+        <div ref={n=>{if(n)el.current.identity=n}} style={{width:'35vw',borderRight:'1px solid rgba(255,255,255,.12)',padding:'clamp(40px,5vw,80px)',display:'flex',flexDirection:'column',justifyContent:'space-between'}}>
+          <div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:phase>=1?.4:.1,transition:'opacity .6s ease',marginBottom:24}}>CASE {c.id}</div>
+            <div style={{fontFamily:'Geist',fontSize:'clamp(32px,4vw,56px)',fontWeight:500,letterSpacing:'-.03em',lineHeight:.95,marginBottom:16,opacity:phase>=1?1:0,transform:phase>=1?'translateY(0)':'translateY(20px)',transition:'all .7s ease .1s'}}>
+              {c.name}
+            </div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:phase>=1?.5:.1,lineHeight:1.8,transition:'opacity .6s ease .2s'}}>
+              {c.category}<br/>{c.services}<br/>{c.year}
+            </div>
+          </div>
+          <div style={{display:'flex',gap:6,alignItems:'flex-end',height:48}}>
+            {[.66,1,.82].map((h,i)=>(
+              <span key={i} style={{
+                width:6,height:`${h*100}%`,background:'#FFF',
+                transform:phase>=1?'scaleY(1)':'scaleY(0)',
+                transformOrigin:'bottom',
+                transition:`transform .6s ${EASE} ${i*100+200}ms`,
+              }}/>
+            ))}
+          </div>
+        </div>
+
+        {/* right — storytelling */}
+        <div ref={n=>{if(n)el.current.content=n}} style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center',padding:'clamp(40px,5vw,80px)',position:'relative'}}>
+
+          {/* headline — word by word reveal */}
+          <div ref={n=>{if(n)el.current.headlineWords=n}} style={{marginBottom:'clamp(40px,6vh,80px)',overflow:'hidden'}}>
+            <h2 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(40px,6vw,84px)',fontWeight:500,letterSpacing:'-.035em',lineHeight:.92,display:'flex',flexWrap:'wrap',gap:'clamp(4px,.5vw,12px)'}}>
+              {headlineWords.map((w,i)=>(
+                <span key={i} className="hl-word" style={{
+                  display:'inline-block',
+                  fontWeight:i===2||i===4||i===5?300:500,
+                  fontStyle:i===2||i===4||i===5?'italic':'normal',
+                  opacity:0,transform:'translateY(40px)',
+                  transition:`all .6s ${EASE} ${i*80}ms`,
+                }}>{w}</span>
+              ))}
+            </h2>
+          </div>
+
+          {/* system layers — filling bars with wave */}
+          <div style={{marginBottom:'clamp(40px,6vh,80px)'}}>
+            <K s={{opacity:phase>=2?.5:.1,transition:'opacity .5s ease'}}>02 / The system</K>
+            <div style={{display:'flex',flexDirection:'column',gap:12}}>
+              {c.systems.map((s,i)=>{
+                const barPhase=phase>=3;
+                return(
+                  <div key={s} ref={n=>{if(n)barRefs.current[i]=n}} style={{height:'clamp(56px,7vw,88px)',border:'1px solid rgba(255,255,255,.2)',position:'relative',overflow:'hidden'}}>
+                    {/* fill bar */}
+                    <div style={{
+                      position:'absolute',inset:0,background:'#FFF',
+                      transformOrigin:'left',
+                      transform:barPhase?`scaleX(${c.systemValues[i]})`:'scaleX(0)',
+                      transition:`transform 1.2s cubic-bezier(.2,.85,.2,1) ${i*180}ms`,
+                    }}/>
+                    {/* glow line on leading edge */}
+                    <div style={{
+                      position:'absolute',top:0,bottom:0,width:2,background:'rgba(255,255,255,.6)',
+                      left:`${barPhase?c.systemValues[i]*100:0}%`,
+                      opacity:barPhase?0:1,
+                      transition:`left 1.2s cubic-bezier(.2,.85,.2,1) ${i*180}ms, opacity .3s ease 1.2s`,
+                      boxShadow:'0 0 12px rgba(255,255,255,.4)',
+                    }}/>
+                    <span style={{
+                      position:'absolute',left:20,top:'50%',transform:'translateY(-50%)',
+                      fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.2em',textTransform:'uppercase',
+                      mixBlendMode:'difference',color:'#FFF',zIndex:1,
+                      opacity:phase>=2?1:0,transition:`opacity .5s ease ${i*100+200}ms`,
+                    }}>0{i+1} · {s}</span>
+                    {/* percentage indicator */}
+                    <span style={{
+                      position:'absolute',right:16,top:'50%',transform:'translateY(-50%)',
+                      fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.15em',
+                      mixBlendMode:'difference',color:'#FFF',zIndex:1,
+                      opacity:barPhase?.5:0,transition:`opacity .5s ease ${i*180+800}ms`,
+                    }}>{Math.round(c.systemValues[i]*100)}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* description — character by character */}
+          <div ref={n=>{if(n)el.current.descChars=n}} style={{opacity:phase>=4?1:0,transition:'opacity .5s ease'}}>
+            <p style={{margin:0,fontSize:16,lineHeight:1.6,opacity:.7,maxWidth:480,display:'flex',flexWrap:'wrap'}}>
+              {c.description.split('').map((ch,i)=>(
+                <span key={i} className="desc-char" style={{opacity:0,transition:`opacity .05s ease ${i*8}ms`}}>{ch}</span>
+              ))}
+            </p>
+          </div>
+
+          {/* connection line animation */}
+          <div style={{position:'absolute',bottom:'clamp(40px,5vh,80px)',left:'clamp(40px,5vw,80px)',right:'clamp(40px,5vw,80px)'}}>
+            <div style={{height:1,background:'rgba(255,255,255,.08)',position:'relative'}}>
+              <div style={{height:'100%',background:'rgba(255,255,255,.3)',transformOrigin:'left',transform:`scaleX(${phase>=5?1:0})`,transition:'transform 1.5s ease'}}/>
+              <div style={{position:'absolute',right:0,top:-4,width:8,height:8,border:'1px solid rgba(255,255,255,.3)',borderRadius:'50%',opacity:phase>=5?1:0,transition:'opacity .5s ease .5s'}}/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+/* ═══ 05 CASE FILM 03 — FLAT BID ═══ */
+const CaseFlatBid=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[phase,setPhase]=useState(red?5:0);
+  const[danceDone,setDanceDone]=useState(false);
+
+  const c=CASES[2];
+
+  useEffect(()=>{
+    if(red){setPhase(5);setDanceDone(true);return}
+    const timers=[
+      setTimeout(()=>setPhase(1),0),
+      setTimeout(()=>setPhase(2),400),
+      setTimeout(()=>setPhase(3),800),
+      setTimeout(()=>setPhase(4),1400),
+      setTimeout(()=>{setPhase(5);setDanceDone(true)},2200),
+    ];
+    return()=>timers.forEach(clearTimeout);
+  },[red]);
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=stickyProgress(rc,vh);
+      const e=el.current;
+      try{
+        if(e.identity)e.identity.style.transform=`translateY(${lerp(0,-40,p)}px)`;
+        if(e.content)e.content.style.opacity=1-range(p,.7,1)*.6;
+        if(e.exclNum){
+          const numP=range(p,.2,.35);
+          e.exclNum.style.transform=`scale(${lerp(.8,1,numP)})`;
+          e.exclNum.style.opacity=numP;
+        }
+      }catch(err){}
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  const targetHeights=[45,82,55,92,38,78,48,88,42,75];
+
+  return(
+    <section ref={sec} style={{height:'280vh',position:'relative',background:'#FFF',color:'#000',borderTop:'1px solid #000'}}>
+      <div style={{position:'sticky',top:0,height:'100vh',overflow:'hidden',display:'flex'}}>
+
+        {/* left — fixed identity */}
+        <div ref={n=>{if(n)el.current.identity=n}} style={{width:'35vw',borderRight:'1px solid #000',padding:'clamp(40px,5vw,80px)',display:'flex',flexDirection:'column',justifyContent:'space-between'}}>
+          <div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:phase>=1?.4:.1,transition:'opacity .6s ease',marginBottom:24}}>CASE {c.id}</div>
+            <div style={{fontFamily:'Geist',fontSize:'clamp(32px,4vw,56px)',fontWeight:500,letterSpacing:'-.03em',lineHeight:.95,marginBottom:16,opacity:phase>=1?1:0,transform:phase>=1?'translateY(0)':'translateY(20px)',transition:'all .7s ease .1s'}}>
+              {c.name}
+            </div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:phase>=1?.5:.1,lineHeight:1.8,transition:'opacity .6s ease .2s'}}>
+              {c.category}<br/>{c.services}<br/>{c.year}
+            </div>
+          </div>
+          <div style={{display:'flex',gap:6,alignItems:'flex-end',height:48}}>
+            {[.66,1,.82].map((h,i)=>(
+              <span key={i} style={{
+                width:6,height:`${h*100}%`,background:'#000',
+                transform:phase>=1?'scaleY(1)':'scaleY(0)',
+                transformOrigin:'bottom',
+                transition:`transform .6s ${EASE} ${i*100+200}ms`,
+              }}/>
+            ))}
+          </div>
+        </div>
+
+        {/* right — storytelling */}
+        <div ref={n=>{if(n)el.current.content=n}} style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center',padding:'clamp(40px,5vw,80px)',position:'relative'}}>
+
+          {/* headline — mask reveal */}
+          <div style={{overflow:'hidden',marginBottom:'clamp(40px,6vh,80px)'}}>
+            <h2 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(40px,6vw,84px)',fontWeight:500,letterSpacing:'-.035em',lineHeight:.92,transform:phase>=1?'translateY(0)':'translateY(110%)',transition:`transform .8s ${EASE}`}}>
+              A premium rebuild for a <i style={{fontWeight:300}}>premium mover.</i>
+            </h2>
+          </div>
+
+          {/* metrics — count up */}
+          <div style={{display:'flex',gap:'clamp(32px,5vw,64px)',marginBottom:'clamp(40px,6vh,80px)'}}>
+            {c.metrics.map(([n,l],i)=>(
+              <div key={l} style={{opacity:phase>=1?1:0,transform:phase>=1?'translateY(0)':'translateY(20px)',transition:`all .6s ease ${i*150+200}ms`}}>
+                <div style={{fontFamily:'Geist',fontSize:'clamp(48px,7vw,80px)',fontWeight:500,letterSpacing:'-.03em',lineHeight:1}}>{n}</div>
+                <div style={{marginTop:8,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5}}>{l}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* exclusivity system */}
+          <div style={{marginBottom:'clamp(40px,6vh,80px)'}}>
+            <K s={{opacity:phase>=2?.5:.1,transition:'opacity .5s ease'}}>02 / The exclusivity system</K>
+            <div ref={n=>{if(n)el.current.exclNum=n}} style={{
+              fontFamily:'Geist',fontSize:'clamp(64px,10vw,140px)',fontWeight:500,letterSpacing:'-.05em',lineHeight:.85,marginBottom:12,
+              opacity:0,transform:'scale(.8)',
+            }}>
+              {c.exclusivity}
+            </div>
+            <div style={{fontFamily:'"Geist Mono",monospace',fontSize:11,letterSpacing:'.22em',textTransform:'uppercase',opacity:phase>=2?.5:.1,transition:'opacity .5s ease .2s'}}>
+              {c.exclusivityLabel}
+            </div>
+          </div>
+
+          {/* bars — DANCE then settle */}
+          <div style={{display:'flex',alignItems:'flex-end',gap:8,height:'clamp(120px,18vh,220px)',marginBottom:'clamp(32px,4vh,56px)'}}>
+            {Array.from({length:10}).map((_,i)=>{
+              const maxH=220;
+              const target=targetHeights[i]/100*maxH;
+              const danceHeight=(((i*43)%50)+30)/100*maxH;
+              const showBars=phase>=2;
+              const shouldDance=phase>=3&&!danceDone;
+              const shouldSettle=phase>=5;
+              const barH=shouldSettle?target:shouldDance?danceHeight:showBars?40:0;
+              return(
+                <div key={i} style={{
+                  flex:1,
+                  alignSelf:'flex-end',
+                }}>
+                  <div style={{
+                    width:'100%',
+                    height:barH,
+                    background:'#000',
+                    transition:`height .6s cubic-bezier(.34,1.56,.64,1) ${i*50}ms`,
+                  }}/>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* territory */}
+          <div style={{opacity:phase>=5?1:0,transform:phase>=5?'translateY(0)':'translateY(20px)',transition:'all .8s ease'}}>
+            <p style={{margin:0,fontSize:15,lineHeight:1.6,opacity:.7,maxWidth:400}}>
+              {c.territory}
+            </p>
+          </div>
+
+          {/* lock indicator */}
+          {danceDone&&(
+            <div style={{position:'absolute',bottom:'clamp(40px,5vh,80px)',right:'clamp(40px,5vw,80px)',opacity:0,animation:'fadeIn .5s ease forwards'}}>
+              <div style={{fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.4}}>SYSTEM LOCKED</div>
+              <div style={{display:'flex',gap:3,alignItems:'flex-end',height:16,marginTop:8}}>
+                {[.66,1,.82].map((h,i)=>(
+                  <span key={i} style={{width:3,height:`${h*100}%`,background:'#000',animation:`barPulse 1.5s ease ${i*.2}s infinite`}}/>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes bounce{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(-8px)}}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes barPulse{0%,100%{opacity:.4}50%{opacity:1}}
+      `}</style>
+    </section>
+  );
+};
+
+/* ═══ 06 FINAL CTA ═══ */
+const FinalCTA=()=>{
+  const red=useReducedMotion();
+  const sec=useRef(null);
+  const el=useRef({});
+  const[hov1,setHov1]=useState(false);
+  const[hov2,setHov2]=useState(false);
+  const[hovBtn,setHovBtn]=useState(false);
+  const invert=hovBtn;
+
+  useEffect(()=>{
+    if(red)return;
+    const s=sec.current;if(!s)return;
+    let r=0,tr=0;
+    const u=()=>{
+      r=0;
+      const rc=s.getBoundingClientRect(),vh=window.innerHeight;
+      const p=viewportProgress(rc,vh);
+      const e=el.current;
+      if(e.hl)e.hl.style.transform=`translateY(${lerp(50,0,p)}px)`;
+      if(e.sub)e.sub.style.transform=`translateY(${lerp(20,0,p)}px)`;
+      if(e.btns)e.btns.style.transform=`translateY(${lerp(20,0,p)}px)`;
+      const sep=range(p,.15,.4);
+      if(e.b0)e.b0.style.transform=`translateX(${sep*-30}px) translateY(${lerp(-30,0,p)}px)`;
+      if(e.b1)e.b1.style.transform=`translateY(${lerp(-30,0,p)}px)`;
+      if(e.b2)e.b2.style.transform=`translateX(${sep*30}px) translateY(${lerp(-30,0,p)}px)`;
+    };
+    const on=()=>{if(!r)r=requestAnimationFrame(u);clearTimeout(tr);tr=setTimeout(u,80)};
+    u();window.addEventListener('scroll',on,{passive:true});window.addEventListener('resize',u);
+    return()=>{window.removeEventListener('scroll',on);window.removeEventListener('resize',u);if(r)cancelAnimationFrame(r);clearTimeout(tr)};
+  },[red]);
+
+  return(
+    <section ref={sec} style={{minHeight:'100vh',background:invert?'#FFF':'#000',color:invert?'#000':'#FFF',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',padding:'80px 6vw',position:'relative',borderTop:`1px solid ${invert?'#000':'#FFF'}`,overflow:'hidden',transition:'background .5s cubic-bezier(.2,.8,.2,1), color .5s cubic-bezier(.2,.8,.2,1)'}}>
+
+      <div style={{display:'flex',gap:8,alignItems:'flex-end',height:64,marginBottom:40}}>
+        {[0,1,2].map(i=>(
+          <div key={i} ref={n=>{if(n)el.current[`b${i}`]=n}} style={{width:10,height:64,background:invert?'#000':'#FFF',willChange:'transform',transition:'background .5s cubic-bezier(.2,.8,.2,1)'}}/>
+        ))}
+      </div>
+
+      <div ref={n=>{if(n)el.current.hl=n}} style={{textAlign:'center',willChange:'transform'}}>
+        <h2 style={{margin:0,fontFamily:'Geist',fontSize:'clamp(40px,7vw,110px)',fontWeight:500,letterSpacing:'-.045em',lineHeight:1.02}}>
+          YOUR CLIENTS<br/>DON'T NEED<br/>ANOTHER VENDOR.
+        </h2>
+      </div>
+
+      <p ref={n=>{if(n)el.current.sub=n}} style={{marginTop:24,fontFamily:'Geist',fontSize:'clamp(16px,1.5vw,22px)',fontWeight:300,fontStyle:'italic',opacity:.5,willChange:'transform'}}>
+        You might.
+      </p>
+
+      <div ref={n=>{if(n)el.current.btns=n}} style={{display:'flex',gap:20,marginTop:48,flexWrap:'wrap',justifyContent:'center',willChange:'transform'}}>
+        <a href="contact.html"
+          onMouseEnter={()=>{setHov1(true);setHovBtn(true)}} onMouseLeave={()=>{setHov1(false);setHovBtn(false)}}
+          style={{
+            padding:'20px 36px',border:hov1?`1px solid ${invert?'#FFF':'#000'}`:`1px solid ${invert?'#000':'#FFF'}`,
+            background:hov1?(invert?'#000':'#FFF'):'transparent',color:hov1?(invert?'#FFF':'#000'):'currentColor',
+            fontFamily:'"Geist Mono",monospace',fontSize:13,letterSpacing:'.22em',
+            textTransform:'uppercase',fontWeight:600,
+            transition:'all .4s cubic-bezier(.2,.8,.2,1)',
+            display:'inline-flex',alignItems:'center',gap:12,
+          }}>
+          <TB size={14} color="currentColor"/>GET A QUOTE →
+        </a>
+        <a href="case-studies.html"
+          onMouseEnter={()=>setHov2(true)} onMouseLeave={()=>setHov2(false)}
+          style={{
+            padding:'20px 36px',border:`1px solid ${invert?'rgba(0,0,0,.2)':'rgba(255,255,255,.2)'}`,
+            background:'transparent',color:invert?'rgba(0,0,0,.6)':'rgba(255,255,255,.6)',
+            fontFamily:'"Geist Mono",monospace',fontSize:13,letterSpacing:'.22em',
+            textTransform:'uppercase',
+            transition:'all .4s cubic-bezier(.2,.8,.2,1)',
+          }}>
+          SEE OUR WORK →
+        </a>
+      </div>
+
+      <div style={{position:'absolute',bottom:28,left:32,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.3}}>06</div>
+    </section>
+  );
+};
+
+/* ═══ FOOTER ═══ */
+const Footer=()=>(
+  <footer style={{background:'#000',color:'#FFF',borderTop:'1px solid #FFF',padding:'44px 6vw 32px'}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',flexWrap:'wrap',gap:28}}>
+      <div>
+        <TB size={20} color="#FFF" gap={3}/>
+        <div style={{marginTop:14,fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase',opacity:.5}}>© 2026 White Label Resell · est. 2018</div>
+      </div>
+      <div style={{display:'flex',gap:22,flexWrap:'wrap',fontFamily:'"Geist Mono",monospace',fontSize:10,letterSpacing:'.22em',textTransform:'uppercase'}}>
+        <a href="index.html" style={{opacity:.8}}>Home</a>
+        <a href="case-studies.html" style={{opacity:.8}}>Work</a>
+        <a href="about.html" style={{opacity:.8}}>About</a>
+        <a href="team.html" style={{opacity:.8}}>Team</a>
+        <a href="contact.html" style={{opacity:.8}}>Get a Quote</a>
+        <a href="mailto:partners@whitelabelresell.com" style={{opacity:.8}}>partners@whitelabelresell.com</a>
+      </div>
+    </div>
+  </footer>
+);
+
+/* ═══ APP ═══ */
+const App=()=>(
+  <React.Fragment>
+    <HUD/>
+    <ScrollPct/>
+    <Hero/>
+    <CaseIndex/>
+    <CaseGuild/>
+    <CaseUnem/>
+    <CaseFlatBid/>
+    <FinalCTA/>
+    <Footer/>
+  </React.Fragment>
+);
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
